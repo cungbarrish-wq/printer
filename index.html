@@ -126,6 +126,7 @@
                 object-fit: contain !important;
                 transform: translate(var(--print-pos-x, 0%), var(--print-pos-y, 0%)) scale(var(--print-scale-x, 1), var(--print-scale-y, 1)) !important;
                 transform-origin: center center !important;
+                image-rendering: high-quality !important; /* បន្ថែមដើម្បីធានាភាពច្បាស់ពេល Print */
             }
 
             /* លាក់ស៊ុមលេខទំព័រពេលព្រីនពិតប្រាកដ */
@@ -218,24 +219,27 @@
                 </div>
             </div>
 
-            <div class="p-4 border-b border-gray-200 bg-blue-50">
+            <div class="p-4 border-b border-gray-200 bg-blue-50 flex-1 flex flex-col min-h-0">
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="font-bold text-gray-800"><i class="fa-solid fa-expand mr-2"></i>៣. ទំហំ និងទីតាំង</h2>
                     <button id="add-rule-btn" class="text-xs bg-blue-600 text-white px-2 py-1.5 rounded hover:bg-blue-700 transition shadow-sm flex items-center">
                         <i class="fa-solid fa-plus mr-1"></i>បន្ថែម
                     </button>
                 </div>
-                <div id="rules-container" class="space-y-3 pr-1 pb-2">
+                
+                <!-- ប្រអប់ថ្មីសម្រាប់ផ្ទុក Custom Scale មិនឱ្យធ្លាក់វែងពេក -->
+                <div id="rules-container" class="space-y-3 pr-2 pb-2 max-h-[320px] overflow-y-auto bg-blue-100/30 border border-blue-200 rounded-lg p-2 shadow-inner">
                     <!-- Rules លោតនៅទីនេះ -->
                 </div>
-                <div class="mt-2 pt-2 border-t border-blue-200">
+                
+                <div class="mt-3 pt-3 border-t border-blue-200">
                     <button id="reset-filters" class="w-full text-sm text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 py-1.5 rounded transition shadow-sm">
                         <i class="fa-solid fa-rotate-right mr-1"></i>កំណត់ត្រឡប់ដើម (Reset All)
                     </button>
                 </div>
             </div>
 
-            <!-- ៤. ផ្នែកលេខទំព័រ (NEW SECTION) -->
+            <!-- ៤. ផ្នែកលេខទំព័រ -->
             <div class="p-4 border-b border-gray-200 bg-orange-50">
                 <h2 class="font-bold text-orange-800 mb-3"><i class="fa-solid fa-list-ol mr-2"></i>៤. លេខទំព័រ (Page Numbers)</h2>
                 
@@ -277,7 +281,18 @@
             <div class="p-4 flex-1">
                 <h2 class="font-bold text-gray-700 mb-3"><i class="fa-solid fa-gear mr-2"></i>៦. ការកំណត់ម៉ាស៊ីន</h2>
                 <div class="space-y-3">
+                    <!-- បន្ថែមមុខងារកម្រិតភាពច្បាស់ទីនេះ -->
                     <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">កម្រិតភាពច្បាស់ (Resolution)</label>
+                        <select id="render-quality-select" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2">
+                            <option value="auto">ស្វ័យប្រវត្តិ (ការពារគាំង)</option>
+                            <option value="2.0">ច្បាស់មធ្យម (Good - 2x)</option>
+                            <option value="3.0" selected>ច្បាស់ខ្លាំង (High - 3x)</option>
+                            <option value="4.5">ច្បាស់បំផុតតាមដើម (Max - 4.5x)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">ទំហំក្រដាស (Paper Size)</label>
                         <select id="paper-size-select" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2">
                             <option value="A4" selected>A4 (ស្តង់ដារ)</option>
                             <option value="A3">A3 (ក្រដាសធំ)</option>
@@ -350,7 +365,7 @@
             const addRuleBtn = document.getElementById('add-rule-btn');
             const resetBtn = document.getElementById('reset-filters');
             
-            // UI elements សម្រាប់លេខទំព័រ
+            // UI elements សម្រាប់លេខទំព័រ និងការកំណត់ម៉ាស៊ីន
             const pnTargetPagesInput = document.getElementById('pn-target-pages');
             const pnStartNumInput = document.getElementById('pn-start-num');
             const addPageNumBtn = document.getElementById('add-pagenum-btn');
@@ -359,6 +374,7 @@
             const saveProjectBtn = document.getElementById('save-project-btn');
             const savedListDiv = document.getElementById('saved-list');
             
+            const renderQualitySelect = document.getElementById('render-quality-select'); // ហៅយក Select ថ្មី
             const paperSizeSelect = document.getElementById('paper-size-select');
             const dynamicPrintStyle = document.getElementById('dynamic-print-style');
             
@@ -392,7 +408,6 @@
                 let closestPage = 1;
                 let minDistance = Infinity;
                 
-                // រកចំណុចកណ្តាលនៃផ្ទាំង Preview
                 const wrapperRect = canvasWrapper.getBoundingClientRect();
                 const wrapperCenter = wrapperRect.top + (wrapperRect.height / 2);
 
@@ -401,7 +416,6 @@
                     const pageCenter = rect.top + (rect.height / 2);
                     const distance = Math.abs(wrapperCenter - pageCenter);
 
-                    // ឆែកមើលថាទំព័រណានៅជិតចំណុចកណ្តាលជាងគេ
                     if (distance < minDistance) {
                         minDistance = distance;
                         closestPage = index + 1;
@@ -412,18 +426,18 @@
             }
 
             // --- មុខងារបង្កើត Scale Rule (Part Bar) ---
-            function createRuleElement(isFirst = false) {
+            function createRuleElement(isMaster = false) {
                 const ruleDiv = document.createElement('div');
                 ruleDiv.className = 'scale-rule bg-white p-3 rounded-lg border border-blue-200 shadow-sm relative transition-all';
                 
                 let deleteBtnHTML = '';
-                if (!isFirst) {
+                if (!isMaster) {
                     deleteBtnHTML = `<button class="delete-rule-btn absolute top-2 right-2 w-6 h-6 flex justify-center items-center rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition"><i class="fa-solid fa-xmark text-xs"></i></button>`;
                 }
 
                 ruleDiv.innerHTML = `
                     ${deleteBtnHTML}
-                    <div class="mb-3 ${!isFirst ? 'pr-8' : ''}">
+                    <div class="mb-3 ${!isMaster ? 'pr-8' : ''}">
                         <label class="text-xs font-semibold text-gray-700 block mb-1">អនុវត្តលើទំព័រ (ឧ. 1, 3-5)</label>
                         <input type="text" class="page-range-input w-full border border-gray-300 rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none" placeholder="ទុកទទេដើម្បីអនុវត្តលើទំព័រទាំងអស់">
                     </div>
@@ -483,7 +497,7 @@
 
                 pageInput.addEventListener('input', applyCSSFiltersAndScale);
 
-                if (!isFirst) {
+                if (!isMaster) {
                     ruleDiv.querySelector('.delete-rule-btn').addEventListener('click', () => {
                         ruleDiv.remove();
                         applyCSSFiltersAndScale();
@@ -493,9 +507,11 @@
             }
 
             rulesContainer.appendChild(createRuleElement(true));
+            
             addRuleBtn.addEventListener('click', () => {
-                rulesContainer.appendChild(createRuleElement(false));
-                rulesContainer.scrollTop = rulesContainer.scrollHeight;
+                // ដាក់ពីលើគេ (Prepend) ដើម្បីឱ្យស្រួលរក និង Overwrite ទិន្នន័យចាស់ខាងក្រោម
+                rulesContainer.prepend(createRuleElement(false));
+                rulesContainer.scrollTop = 0;
             });
 
             // --- មុខងារលេខទំព័រ (Page Numbering) ---
@@ -622,6 +638,16 @@
             });
 
             // --- មុខងាររៀបចំឯកសារ (Render Engine) ---
+            
+            // អនុញ្ញាតឱ្យ Reload ពេលប្តូរកម្រិតភាពច្បាស់
+            renderQualitySelect.addEventListener('change', () => {
+                if (currentFileObject && currentFileObject.type === 'application/pdf') {
+                    showToast("កំពុងរៀបចំឯកសារឡើងវិញតាមកម្រិតភាពច្បាស់ថ្មី...", false, true, true);
+                    // ប្រើ setTimeout ដើម្បីឱ្យ UI លោតចេញសិន
+                    setTimeout(() => processFileContent(currentFileObject, true), 100);
+                }
+            });
+
             async function processFileContent(file, isRestoring = false) {
                 if (!file) return;
                 currentFileObject = file; // រក្សាទុកសម្រាប់ Save
@@ -658,9 +684,14 @@
                         const pdf = await pdfjsLib.getDocument(typedarray).promise;
                         const numPages = pdf.numPages;
                         
-                        let renderScale = 2.0; 
-                        if (numPages > 200) renderScale = 1.0;
-                        else if (numPages > 50) renderScale = 1.2;
+                        // កំណត់កម្រិតភាពច្បាស់ (Resolution Scale) ផ្អែកលើជម្រើសអ្នកប្រើ
+                        let renderScale = parseFloat(renderQualitySelect.value); 
+                        if (isNaN(renderScale)) {
+                            // បើស្វ័យប្រវត្តិ
+                            renderScale = 3.0; 
+                            if (numPages > 50) renderScale = 2.0;
+                            if (numPages > 150) renderScale = 1.5;
+                        }
 
                         emptyState.classList.add('hidden');
                         printContainer.classList.remove('hidden');
@@ -687,7 +718,9 @@
 
                             pageWrapper.appendChild(canvas);
                             printContainer.appendChild(pageWrapper);
-                            if (i % 3 === 0) await new Promise(r => setTimeout(r, 5)); 
+                            
+                            // សម្រាក Thread ដើម្បីកុំឱ្យគាំងពេល Render Resolution ខ្ពស់
+                            if (i % 2 === 0) await new Promise(r => setTimeout(r, 10)); 
                         }
                         
                         printBtn.removeAttribute('disabled');
@@ -791,7 +824,8 @@
                     page.style.setProperty('--print-pos-y', '0%');
                 });
 
-                const rules = rulesContainer.querySelectorAll('.scale-rule');
+                // ទាញយកផ្ទាំងកំណត់ Scale (Rule) ទាំងអស់មកដំណើរការ (Reverse ដើម្បីឱ្យ Rule ថ្មីមានអាទិភាពខ្ពស់ជាងគេ)
+                const rules = Array.from(rulesContainer.querySelectorAll('.scale-rule')).reverse();
                 rules.forEach(rule => {
                     const pageStr = rule.querySelector('.page-range-input').value;
                     const inputs = rule.querySelectorAll('input[type="number"]');
@@ -848,6 +882,9 @@
                     const keys = await localforage.keys();
                     const projectKeys = keys.filter(k => k.startsWith('project_'));
                     
+                    // តម្រៀបបញ្ជីឱ្យបានស្អាត
+                    projectKeys.sort((a, b) => b.localeCompare(a));
+                    
                     if (projectKeys.length === 0) {
                         savedListDiv.innerHTML = '<p class="text-xs text-gray-500 text-center py-2">មិនទាន់មានឯកសារទេ</p>';
                         return;
@@ -884,12 +921,14 @@
                 // ប្រមូលទិន្នន័យ Rules ទាំងអស់
                 const rulesData = Array.from(rulesContainer.querySelectorAll('.scale-rule')).map(rule => {
                     const inputs = rule.querySelectorAll('input[type="number"]');
+                    const isMaster = rule.querySelector('.delete-rule-btn') === null; // កំណត់សម្គាល់ Master Rule
                     return {
                         pageStr: rule.querySelector('.page-range-input').value,
                         scaleX: inputs[0].value,
                         scaleY: inputs[1].value,
                         posX: inputs[2].value,
-                        posY: inputs[3].value
+                        posY: inputs[3].value,
+                        isMaster: isMaster
                     };
                 });
 
@@ -907,6 +946,7 @@
                         contrast: contrastSlider.value,
                         brightness: brightnessSlider.value,
                         grayscale: grayscaleCheck.checked,
+                        renderQuality: renderQualitySelect.value // ផ្ទុកកម្រិតភាពច្បាស់
                     },
                     rules: rulesData,
                     pageNumbers: pageNumRules // Save លេខទំព័រ
@@ -941,11 +981,18 @@
                 brightnessSlider.value = proj.settings.brightness;
                 grayscaleCheck.checked = proj.settings.grayscale;
                 
+                if (proj.settings.renderQuality) {
+                    renderQualitySelect.value = proj.settings.renderQuality;
+                } else {
+                    renderQualitySelect.value = "auto";
+                }
+                
                 // 2. ស្តារ Rules
                 rulesContainer.innerHTML = '';
                 if (proj.rules && proj.rules.length > 0) {
                     proj.rules.forEach((rData, i) => {
-                        const ruleDiv = createRuleElement(i === 0);
+                        const isMaster = rData.isMaster !== undefined ? rData.isMaster : (i === 0);
+                        const ruleDiv = createRuleElement(isMaster);
                         ruleDiv.querySelector('.page-range-input').value = rData.pageStr || '';
                         
                         const numInputs = ruleDiv.querySelectorAll('input[type="number"]');
