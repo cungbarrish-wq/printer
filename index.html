@@ -367,6 +367,7 @@
             const totalPageNum = document.getElementById('total-page-num');
             
             let currentFileObject = null;
+            let currentProjectId = null; // បន្ថែមអថេរសម្រាប់តាមដាន Project ID បច្ចុប្បន្ន
             
             // State សម្រាប់លេខទំព័រ
             let pageNumRules = [];
@@ -634,6 +635,8 @@
                 setTimeout(() => pageIndicator.classList.add('hidden'), 300);
 
                 if (!isRestoring) {
+                    currentProjectId = null; // កំណត់លេខសម្គាល់ឡើងវិញ សម្រាប់ File ថ្មី
+
                     contrastSlider.value = 100;
                     brightnessSlider.value = 100;
                     grayscaleCheck.checked = false;
@@ -890,8 +893,13 @@
                     };
                 });
 
+                // ប្រសិនបើជាឯកសារថ្មី (មិនទាន់មាន ID) ត្រូវបង្កើត ID ថ្មី
+                if (!currentProjectId) {
+                    currentProjectId = Date.now().toString();
+                }
+
                 const projectData = {
-                    id: Date.now().toString(),
+                    id: currentProjectId,
                     name: currentFileObject.name,
                     date: new Date().toLocaleString('km-KH'),
                     file: currentFileObject, 
@@ -905,8 +913,9 @@
                 };
                 
                 try {
+                    // Update ឬ បង្កើតថ្មី ដោយផ្អែកលើ currentProjectId ដដែល
                     await localforage.setItem('project_' + projectData.id, projectData);
-                    showToast("បានរក្សាទុកក្នុង Local Storage ជោគជ័យ!", true);
+                    showToast("បានរក្សាទុក (Update) ជោគជ័យ!", true);
                     loadSavedList();
                 } catch(e) {
                     console.error(e);
@@ -922,6 +931,10 @@
                     showToast("រកមិនឃើញឯកសារទេ!", false, false, false);
                     return;
                 }
+                
+                // កំណត់ ID បច្ចុប្បន្នស្មើនឹង ID ដែលទើប Load មក 
+                // ដើម្បីពេលចុច Save ម្តងទៀត វា Update File នេះដដែល
+                currentProjectId = proj.id;
                 
                 // 1. ស្តារ Settings
                 contrastSlider.value = proj.settings.contrast;
@@ -961,6 +974,12 @@
             window.deleteProject = async function(key) {
                 if(confirm("តើអ្នកពិតជាចង់លុបឯកសារដែលបានរក្សាទុកនេះមែនទេ?")) {
                     await localforage.removeItem(key);
+                    
+                    // ប្រសិនបើលុបចំ File ដែលកំពុង Load នៅលើអេក្រង់ យើងគួរជម្រះ ID ចេញ
+                    if ('project_' + currentProjectId === key) {
+                        currentProjectId = null;
+                    }
+                    
                     loadSavedList();
                     showToast("បានលុបជោគជ័យ!", true);
                 }
