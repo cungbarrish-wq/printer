@@ -248,6 +248,11 @@
                 <span class="font-semibold text-gray-700"><i class="fa-solid fa-eye text-blue-600 mr-2"></i>ការបង្ហាញជាមុនគ្រប់ទំព័រ (Live Preview)</span>
             </div>
 
+            <!-- Page Indicator Floating Badge -->
+            <div id="page-indicator" class="absolute top-16 right-6 bg-gray-800/80 backdrop-blur-sm text-white text-sm px-4 py-2 rounded-full shadow-lg opacity-0 transition-opacity duration-300 z-20 no-print hidden pointer-events-none border border-gray-600">
+                <i class="fa-regular fa-file-lines mr-2"></i>ទំព័រ <span id="current-page-num" class="font-bold">1</span> / <span id="total-page-num">1</span>
+            </div>
+
             <div id="canvas-wrapper" class="flex-1 relative p-4">
                 <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 pointer-events-none">
                     <img src="https://cdn-icons-png.flaticon.com/512/7812/7812078.png" alt="Empty State" class="w-24 h-24 mb-4 opacity-40 grayscale drop-shadow-lg">
@@ -278,6 +283,7 @@
             const printContainer = document.getElementById('print-container');
             const emptyState = document.getElementById('empty-state');
             const printBtn = document.getElementById('print-btn');
+            const canvasWrapper = document.getElementById('canvas-wrapper');
             
             const contrastSlider = document.getElementById('contrast-slider');
             const brightnessSlider = document.getElementById('brightness-slider');
@@ -295,7 +301,49 @@
             const paperSizeSelect = document.getElementById('paper-size-select');
             const dynamicPrintStyle = document.getElementById('dynamic-print-style');
             
+            const pageIndicator = document.getElementById('page-indicator');
+            const currentPageNum = document.getElementById('current-page-num');
+            const totalPageNum = document.getElementById('total-page-num');
+            
             let currentFileObject = null; // ផ្ទុកឯកសារ File/Blob បច្ចុប្បន្ន
+
+            // --- មុខងារចាប់លេខទំព័រពេល Scroll ---
+            let scrollTicking = false;
+            canvasWrapper.addEventListener('scroll', () => {
+                if (!scrollTicking) {
+                    window.requestAnimationFrame(() => {
+                        updateCurrentPageIndicator();
+                        scrollTicking = false;
+                    });
+                    scrollTicking = true;
+                }
+            });
+
+            function updateCurrentPageIndicator() {
+                const pages = printContainer.querySelectorAll('.print-page');
+                if (pages.length === 0) return;
+
+                let closestPage = 1;
+                let minDistance = Infinity;
+                
+                // រកចំណុចកណ្តាលនៃផ្ទាំង Preview
+                const wrapperRect = canvasWrapper.getBoundingClientRect();
+                const wrapperCenter = wrapperRect.top + (wrapperRect.height / 2);
+
+                pages.forEach((page, index) => {
+                    const rect = page.getBoundingClientRect();
+                    const pageCenter = rect.top + (rect.height / 2);
+                    const distance = Math.abs(wrapperCenter - pageCenter);
+
+                    // ឆែកមើលថាទំព័រណានៅជិតចំណុចកណ្តាលជាងគេ
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        closestPage = index + 1;
+                    }
+                });
+
+                currentPageNum.textContent = closestPage;
+            }
 
             // --- មុខងារបង្កើត Scale Rule (Part Bar) ---
             function createRuleElement(isFirst = false) {
@@ -392,6 +440,10 @@
                 printContainer.innerHTML = '';
                 printBtn.setAttribute('disabled', 'true');
                 saveProjectBtn.removeAttribute('disabled'); // បើកសិទ្ធិឲ្យ Save ទុក
+                
+                // លាក់ Indicator សិនពេលកំពុង Load
+                pageIndicator.classList.add('opacity-0');
+                setTimeout(() => pageIndicator.classList.add('hidden'), 300);
 
                 if (!isRestoring) {
                     contrastSlider.value = 100;
@@ -445,6 +497,13 @@
                         
                         printBtn.removeAttribute('disabled');
                         applyCSSFiltersAndScale();
+                        
+                        // បង្ហាញ Page Indicator ពេល Load ចប់
+                        totalPageNum.textContent = numPages;
+                        currentPageNum.textContent = 1;
+                        pageIndicator.classList.remove('hidden');
+                        setTimeout(() => pageIndicator.classList.remove('opacity-0'), 50);
+
                         showToast(`បានផ្ទុកជោគជ័យចំនួន ${numPages} ទំព័រ!`, true);
                     } catch (error) {
                         showToast("មានបញ្ហាក្នុងការអាន PDF។", false, false, false);
@@ -478,6 +537,13 @@
 
                             printBtn.removeAttribute('disabled');
                             applyCSSFiltersAndScale();
+                            
+                            // បង្ហាញ Page Indicator សម្រាប់រូបភាព (១ ទំព័រ)
+                            totalPageNum.textContent = 1;
+                            currentPageNum.textContent = 1;
+                            pageIndicator.classList.remove('hidden');
+                            setTimeout(() => pageIndicator.classList.remove('opacity-0'), 50);
+
                             URL.revokeObjectURL(imgUrl);
                             showToast("បានផ្ទុករូបភាពជោគជ័យ!", true);
                         }
