@@ -8,10 +8,8 @@
     <!-- Favicon និង Social Meta Tags -->
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/7812/7812078.png" type="image/png">
     <meta property="og:title" content="ប្រព័ន្ធគ្រប់គ្រងការបោះពុម្ព Epson (PWA)">
-    <meta property="og:description" content="កម្មវិធីគ្រប់គ្រងការបោះពុម្ពឯកសារ មានមុខងារកែពណ៌ និងរៀបចំទំព័រ។">
+    <meta property="og:description" content="កម្មវិធីគ្រប់គ្រងការបោះពុម្ពឯកសារ មានមុខងារកែពណ៌ រៀបចំទំព័រ និងរក្សាទុកក្នុងម៉ាស៊ីន។">
     <meta property="og:image" content="https://cdn-icons-png.flaticon.com/512/7812/7812078.png">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:image" content="https://cdn-icons-png.flaticon.com/512/7812/7812078.png">
     
     <!-- បញ្ចូល Font Khmer OS Battambang -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,24 +18,25 @@
 
     <!-- Tailwind CSS សម្រាប់ការតុបតែង -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome សម្រាប់រូបតំណាង (Icons) -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- បញ្ចូល PDF.js សម្រាប់អានឯកសារ PDF -->
+    <!-- PDF.js សម្រាប់អានឯកសារ PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <!-- កន្លែងផ្ទុក CSS ទំហំក្រដាសដែលអាចផ្លាស់ប្តូរបាន (Dynamic Page Size) -->
+    <!-- LocalForage សម្រាប់រក្សាទុកឯកសារធំៗ (IndexedDB) ក្នុងម៉ាស៊ីន -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+
+    <!-- កន្លែងផ្ទុក CSS ទំហំក្រដាសដែលអាចផ្លាស់ប្តូរបាន -->
     <style id="dynamic-print-style">
         @page { size: A4; margin: 0mm; }
     </style>
 
     <style>
-        body {
-            font-family: 'Khmer OS Battambang', 'Battambang', sans-serif !important;
-        }
+        body { font-family: 'Khmer OS Battambang', 'Battambang', sans-serif !important; }
 
         /* CSS សម្រាប់ការបង្ហាញនៅលើអេក្រង់ Preview */
         #print-container {
@@ -55,7 +54,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden; /* កាត់ចោលផ្នែកដែលធំលើសទំព័រ ពេលពង្រីក */
+            overflow: hidden; 
             box-sizing: border-box;
         }
         
@@ -64,7 +63,6 @@
             width: 100%;
             height: 100%;
             object-fit: contain;
-            /* ពង្រីករូបភាព និងរំកិលទីតាំងទៅតាមអ័ក្ស X និង Y */
             transform: translate(var(--print-pos-x, 0%), var(--print-pos-y, 0%)) scale(var(--print-scale-x, 1), var(--print-scale-y, 1));
             transform-origin: center center;
             transition: transform 0.1s ease-out;
@@ -81,18 +79,14 @@
             overflow: auto;
         }
         
-        /* តម្រៀប Scrollbar ឲ្យស្អាតសម្រាប់ផ្ទាំងបញ្ជា */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        /* CSS ជួសជុលថ្មីសម្រាប់ការបោះពុម្ពពិតប្រាកដ (PRINT MODE) */
+        /* PRINT MODE */
         @media print {
-            .no-print, header, aside {
-                display: none !important;
-            }
-            
+            .no-print, header, aside { display: none !important; }
             html, body, main, #canvas-wrapper, #print-container {
                 display: block !important;
                 width: auto !important;
@@ -103,7 +97,6 @@
                 padding: 0 !important;
                 background: none !important;
             }
-
             .print-page {
                 page-break-after: always !important;
                 break-after: page !important;
@@ -118,19 +111,16 @@
                 align-items: center !important;
                 overflow: hidden !important; 
             }
-
             .print-page:last-child {
                 page-break-after: auto !important;
                 break-after: auto !important;
             }
-
             .print-page canvas {
                 max-width: 100% !important;
                 max-height: 100% !important;
                 width: 100% !important;
                 height: 100% !important;
                 object-fit: contain !important;
-                /* អនុវត្តទំហំ Scale និងទីតាំងពិតប្រាកដដែលបញ្ជូនពី JavaScript */
                 transform: translate(var(--print-pos-x, 0%), var(--print-pos-y, 0%)) scale(var(--print-scale-x, 1), var(--print-scale-y, 1)) !important;
                 transform-origin: center center !important;
             }
@@ -139,7 +129,7 @@
 </head>
 <body class="bg-gray-100 font-sans text-gray-800 h-screen flex flex-col overflow-hidden">
 
-    <!-- របារផ្នែកខាងលើ -->
+    <!-- Header -->
     <header class="bg-blue-800 text-white p-4 shadow-md flex justify-between items-center z-10 no-print">
         <div class="flex items-center gap-3">
             <img src="https://cdn-icons-png.flaticon.com/512/7812/7812078.png" alt="Print Logo" class="w-8 h-8 object-contain drop-shadow-md bg-white rounded-md p-1">
@@ -162,8 +152,8 @@
 
     <main class="flex-1 flex overflow-hidden">
         
-        <!-- របារបញ្ជាផ្នែកខាងឆ្វេង (Sidebar) -->
-        <aside class="w-80 flex-shrink-0 bg-white shadow-xl flex flex-col z-10 overflow-y-auto no-print">
+        <!-- Sidebar -->
+        <aside class="w-[340px] flex-shrink-0 bg-white shadow-xl flex flex-col z-10 overflow-y-auto no-print">
             
             <div class="p-4 border-b border-gray-200">
                 <h2 class="font-bold text-gray-700 mb-3"><i class="fa-solid fa-file-import mr-2"></i>១. ជ្រើសរើសឯកសារ</h2>
@@ -177,7 +167,6 @@
                 </label>
             </div>
 
-            <!-- កែតម្រូវពណ៌ -->
             <div class="p-4 border-b border-gray-200">
                 <h2 class="font-bold text-gray-700 mb-3"><i class="fa-solid fa-sliders mr-2"></i>២. កែតម្រូវគុណភាពអក្សរ</h2>
                 <div class="mb-3">
@@ -200,20 +189,16 @@
                 </div>
             </div>
 
-            <!-- រៀបចំទំហំ និងទីតាំង (មាន Part Bar អាចបន្ថែមបាន) -->
-            <div class="p-4 border-b border-gray-200 bg-blue-50 flex-1 flex flex-col min-h-0">
+            <div class="p-4 border-b border-gray-200 bg-blue-50">
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="font-bold text-gray-800"><i class="fa-solid fa-expand mr-2"></i>៣. ទំហំ និងទីតាំង</h2>
                     <button id="add-rule-btn" class="text-xs bg-blue-600 text-white px-2 py-1.5 rounded hover:bg-blue-700 transition shadow-sm flex items-center">
                         <i class="fa-solid fa-plus mr-1"></i>បន្ថែម
                     </button>
                 </div>
-
-                <!-- កន្លែងផ្ទុកផ្ទាំង Scale ទាំងអស់ -->
-                <div id="rules-container" class="space-y-3 overflow-y-auto pr-1 flex-1 pb-2">
-                    <!-- Rule នឹងត្រូវបានបង្កើតដោយ JavaScript -->
+                <div id="rules-container" class="space-y-3 pr-1 pb-2">
+                    <!-- Rules លោតនៅទីនេះ -->
                 </div>
-
                 <div class="mt-2 pt-2 border-t border-blue-200">
                     <button id="reset-filters" class="w-full text-sm text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 py-1.5 rounded transition shadow-sm">
                         <i class="fa-solid fa-rotate-right mr-1"></i>កំណត់ត្រឡប់ដើម (Reset All)
@@ -221,14 +206,43 @@
                 </div>
             </div>
 
-            <div class="p-4 bg-gray-50 border-t border-gray-200">
+            <!-- ៤. ផ្នែករក្សាទុកឯកសារ (NEW SECTION) -->
+            <div class="p-4 border-b border-gray-200 bg-green-50">
+                <h2 class="font-bold text-green-800 mb-3"><i class="fa-solid fa-floppy-disk mr-2"></i>៤. រក្សាទុក (Save / Load)</h2>
+                <button id="save-project-btn" class="w-full text-sm text-white bg-green-600 hover:bg-green-700 py-2 rounded transition shadow-sm mb-3 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                    <i class="fa-solid fa-download mr-1"></i> រក្សាទុកការកំណត់នេះ (Save)
+                </button>
+                
+                <h3 class="text-xs font-semibold text-gray-500 mb-2 uppercase">ឯកសារដែលបានផ្ទុកក្នុងម៉ាស៊ីន៖</h3>
+                <div id="saved-list" class="space-y-2 max-h-40 overflow-y-auto pr-1">
+                    <p class="text-xs text-gray-400 text-center py-2">មិនទាន់មានឯកសារទេ</p>
+                </div>
+            </div>
+
+            <div class="p-4 flex-1">
+                <h2 class="font-bold text-gray-700 mb-3"><i class="fa-solid fa-gear mr-2"></i>៥. ការកំណត់ម៉ាស៊ីន</h2>
+                <div class="space-y-3">
+                    <div>
+                        <select id="paper-size-select" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2">
+                            <option value="A4" selected>A4 (ស្តង់ដារ)</option>
+                            <option value="A3">A3 (ក្រដាសធំ)</option>
+                            <option value="A5">A5</option>
+                            <option value="Letter">Letter</option>
+                            <option value="Legal">Legal</option>
+                            <option value="auto">ស្វ័យប្រវត្តិ (Auto)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 bg-gray-50 border-t border-gray-200 sticky bottom-0 z-20">
                 <button id="print-btn" class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-lg px-5 py-3 text-center transition shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
                     <i class="fa-solid fa-print mr-2"></i> បញ្ជាបោះពុម្ព (Print)
                 </button>
             </div>
         </aside>
 
-        <!-- ផ្ទាំងបង្ហាញរូបភាព (Preview Area) -->
+        <!-- Preview Area -->
         <section class="flex-1 min-w-0 flex flex-col relative bg-gray-200">
             <div class="bg-white border-b border-gray-300 px-4 py-2 flex justify-between items-center shadow-sm z-10 no-print">
                 <span class="font-semibold text-gray-700"><i class="fa-solid fa-eye text-blue-600 mr-2"></i>ការបង្ហាញជាមុនគ្រប់ទំព័រ (Live Preview)</span>
@@ -240,9 +254,7 @@
                     <p class="text-lg text-gray-500">មិនទាន់មានឯកសារ។ សូមជ្រើសរើសរូបភាព ឬ PDF។</p>
                 </div>
                 
-                <div id="print-container" class="hidden">
-                     <!-- Canvas នឹងលោតនៅទីនេះ -->
-                </div>
+                <div id="print-container" class="hidden"></div>
             </div>
             
             <div id="toast" class="absolute bottom-5 right-5 flex items-center w-full max-w-xs p-4 space-x-3 text-gray-500 bg-white rounded-lg shadow-lg transform transition-transform translate-y-20 opacity-0 no-print z-50" role="alert">
@@ -256,6 +268,12 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // កំណត់រចនាសម្ព័ន្ធ LocalForage
+            localforage.config({
+                name: 'EpsonPrintManager',
+                storeName: 'projects_store'
+            });
+
             const fileUpload = document.getElementById('file-upload');
             const printContainer = document.getElementById('print-container');
             const emptyState = document.getElementById('empty-state');
@@ -271,7 +289,15 @@
             const addRuleBtn = document.getElementById('add-rule-btn');
             const resetBtn = document.getElementById('reset-filters');
             
-            // មុខងារបង្កើតផ្ទាំងកំណត់ Scale (Part Bar)
+            const saveProjectBtn = document.getElementById('save-project-btn');
+            const savedListDiv = document.getElementById('saved-list');
+            
+            const paperSizeSelect = document.getElementById('paper-size-select');
+            const dynamicPrintStyle = document.getElementById('dynamic-print-style');
+            
+            let currentFileObject = null; // ផ្ទុកឯកសារ File/Blob បច្ចុប្បន្ន
+
+            // --- មុខងារបង្កើត Scale Rule (Part Bar) ---
             function createRuleElement(isFirst = false) {
                 const ruleDiv = document.createElement('div');
                 ruleDiv.className = 'scale-rule bg-white p-3 rounded-lg border border-blue-200 shadow-sm relative transition-all';
@@ -287,48 +313,42 @@
                         <label class="text-xs font-semibold text-gray-700 block mb-1">អនុវត្តលើទំព័រ (ឧ. 1, 3-5)</label>
                         <input type="text" class="page-range-input w-full border border-gray-300 rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none" placeholder="ទុកទទេដើម្បីអនុវត្តលើទំព័រទាំងអស់">
                     </div>
-
                     <div class="space-y-2">
-                        <!-- Scale X -->
                         <div class="flex items-center justify-between gap-2">
-                            <label class="text-xs font-medium text-gray-600 w-16">ទទឹង (X)</label>
+                            <label class="text-[11px] font-medium text-gray-600 w-16">ទទឹង (X)</label>
                             <input type="range" min="10" max="300" value="100" class="flex-1 h-1 bg-blue-200 rounded-lg appearance-none cursor-pointer">
-                            <div class="flex items-center gap-1 w-16">
-                                <input type="number" min="10" max="300" value="100" class="w-full border border-gray-300 rounded px-1 py-0.5 text-xs text-center outline-none focus:border-blue-500">
+                            <div class="flex items-center gap-1 w-14">
+                                <input type="number" min="10" max="300" value="100" class="w-full border border-gray-300 rounded px-1 text-xs text-center outline-none focus:border-blue-500">
                                 <span class="text-[10px] text-gray-500">%</span>
                             </div>
                         </div>
-                        <!-- Scale Y -->
                         <div class="flex items-center justify-between gap-2">
-                            <label class="text-xs font-medium text-gray-600 w-16">បណ្តោយ (Y)</label>
+                            <label class="text-[11px] font-medium text-gray-600 w-16">បណ្តោយ (Y)</label>
                             <input type="range" min="10" max="300" value="100" class="flex-1 h-1 bg-blue-200 rounded-lg appearance-none cursor-pointer">
-                            <div class="flex items-center gap-1 w-16">
-                                <input type="number" min="10" max="300" value="100" class="w-full border border-gray-300 rounded px-1 py-0.5 text-xs text-center outline-none focus:border-blue-500">
+                            <div class="flex items-center gap-1 w-14">
+                                <input type="number" min="10" max="300" value="100" class="w-full border border-gray-300 rounded px-1 text-xs text-center outline-none focus:border-blue-500">
                                 <span class="text-[10px] text-gray-500">%</span>
                             </div>
                         </div>
-                        <!-- Move X -->
                         <div class="flex items-center justify-between gap-2">
-                            <label class="text-xs font-medium text-gray-600 w-16">រំកិល (X)</label>
+                            <label class="text-[11px] font-medium text-gray-600 w-16">រំកិល (X)</label>
                             <input type="range" min="-100" max="100" value="0" class="flex-1 h-1 bg-blue-200 rounded-lg appearance-none cursor-pointer">
-                            <div class="flex items-center gap-1 w-16">
-                                <input type="number" min="-100" max="100" value="0" class="w-full border border-gray-300 rounded px-1 py-0.5 text-xs text-center outline-none focus:border-blue-500">
+                            <div class="flex items-center gap-1 w-14">
+                                <input type="number" min="-100" max="100" value="0" class="w-full border border-gray-300 rounded px-1 text-xs text-center outline-none focus:border-blue-500">
                                 <span class="text-[10px] text-gray-500">%</span>
                             </div>
                         </div>
-                        <!-- Move Y -->
                         <div class="flex items-center justify-between gap-2">
-                            <label class="text-xs font-medium text-gray-600 w-16">រំកិល (Y)</label>
+                            <label class="text-[11px] font-medium text-gray-600 w-16">រំកិល (Y)</label>
                             <input type="range" min="-100" max="100" value="0" class="flex-1 h-1 bg-blue-200 rounded-lg appearance-none cursor-pointer">
-                            <div class="flex items-center gap-1 w-16">
-                                <input type="number" min="-100" max="100" value="0" class="w-full border border-gray-300 rounded px-1 py-0.5 text-xs text-center outline-none focus:border-blue-500">
+                            <div class="flex items-center gap-1 w-14">
+                                <input type="number" min="-100" max="100" value="0" class="w-full border border-gray-300 rounded px-1 text-xs text-center outline-none focus:border-blue-500">
                                 <span class="text-[10px] text-gray-500">%</span>
                             </div>
                         </div>
                     </div>
                 `;
 
-                // ភ្ជាប់ព្រឹត្តិការណ៍រវាង Range Slider និង Number Input
                 const rangeInputs = ruleDiv.querySelectorAll('input[type="range"]');
                 const numInputs = ruleDiv.querySelectorAll('input[type="number"]');
                 const pageInput = ruleDiv.querySelector('.page-range-input');
@@ -349,127 +369,91 @@
 
                 pageInput.addEventListener('input', applyCSSFiltersAndScale);
 
-                // មុខងារលុប
                 if (!isFirst) {
                     ruleDiv.querySelector('.delete-rule-btn').addEventListener('click', () => {
                         ruleDiv.remove();
                         applyCSSFiltersAndScale();
                     });
                 }
-
                 return ruleDiv;
             }
 
-            // បង្កើត Rule ដំបូងពេលបើកកម្មវិធី
             rulesContainer.appendChild(createRuleElement(true));
-
-            // ចុច + បន្ថែម Rule ថ្មី
             addRuleBtn.addEventListener('click', () => {
                 rulesContainer.appendChild(createRuleElement(false));
-                // Scroll ទៅរកផ្ទាំងដែលទើបបង្កើតថ្មី
                 rulesContainer.scrollTop = rulesContainer.scrollHeight;
             });
 
-            // មុខងារអានការកំណត់ទំព័រ (ឧ. 1, 3-5)
-            function parsePageRange(str, totalPages) {
-                if (!str || str.trim() === '') {
-                    return Array.from({length: totalPages}, (_, i) => i + 1);
-                }
-                
-                let pages = new Set();
-                const parts = str.split(',');
-                for (let part of parts) {
-                    part = part.trim();
-                    if (!part) continue;
-                    
-                    if (part.includes('-')) {
-                        const [start, end] = part.split('-').map(s => parseInt(s, 10));
-                        if (!isNaN(start) && !isNaN(end)) {
-                            for (let i = start; i <= end; i++) pages.add(i);
-                        }
-                    } else {
-                        const num = parseInt(part, 10);
-                        if (!isNaN(num)) pages.add(num);
-                    }
-                }
-                return Array.from(pages);
-            }
-
-            fileUpload.addEventListener('change', async function(e) {
-                const file = e.target.files[0];
+            // --- មុខងាររៀបចំឯកសារ (Render Engine) ---
+            async function processFileContent(file, isRestoring = false) {
                 if (!file) return;
-
+                currentFileObject = file; // រក្សាទុកសម្រាប់ Save
+                
                 printContainer.innerHTML = '';
                 printBtn.setAttribute('disabled', 'true');
-                
-                // កំណត់ UI ត្រឡប់ដើម
-                contrastSlider.value = 100;
-                brightnessSlider.value = 100;
-                grayscaleCheck.checked = false;
-                rulesContainer.innerHTML = '';
-                rulesContainer.appendChild(createRuleElement(true));
-                updateUINumbers();
+                saveProjectBtn.removeAttribute('disabled'); // បើកសិទ្ធិឲ្យ Save ទុក
+
+                if (!isRestoring) {
+                    contrastSlider.value = 100;
+                    brightnessSlider.value = 100;
+                    grayscaleCheck.checked = false;
+                    rulesContainer.innerHTML = '';
+                    rulesContainer.appendChild(createRuleElement(true));
+                    updateUINumbers();
+                }
 
                 if (file.type === 'application/pdf') {
                     showToast("កំពុងអានឯកសារ PDF... សូមរង់ចាំ!", false, true, true);
-                    
                     try {
-                        const fileReader = new FileReader();
-                        fileReader.onload = async function() {
-                            const typedarray = new Uint8Array(this.result);
-                            const pdf = await pdfjsLib.getDocument(typedarray).promise;
-                            const numPages = pdf.numPages;
+                        const arrayBuffer = await file.arrayBuffer();
+                        const typedarray = new Uint8Array(arrayBuffer);
+                        const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                        const numPages = pdf.numPages;
+                        
+                        let renderScale = 2.0; 
+                        if (numPages > 200) renderScale = 1.0;
+                        else if (numPages > 50) renderScale = 1.2;
+
+                        emptyState.classList.add('hidden');
+                        printContainer.classList.remove('hidden');
+
+                        for (let i = 1; i <= numPages; i++) {
+                            document.getElementById('toast-message').textContent = `កំពុងរៀបចំទំព័រទី ${i} នៃ ${numPages}...`;
+                            const page = await pdf.getPage(i);
+                            const viewport = page.getViewport({ scale: renderScale }); 
                             
-                            let renderScale = 2.0; 
-                            if (numPages > 200) renderScale = 1.0;
-                            else if (numPages > 50) renderScale = 1.2;
-
-                            emptyState.classList.add('hidden');
-                            printContainer.classList.remove('hidden');
-
-                            for (let i = 1; i <= numPages; i++) {
-                                document.getElementById('toast-message').textContent = `កំពុងរៀបចំទំព័រទី ${i} នៃ ${numPages}...`;
-                                
-                                const page = await pdf.getPage(i);
-                                const viewport = page.getViewport({ scale: renderScale }); 
-                                
-                                const pageWrapper = document.createElement('div');
-                                pageWrapper.className = 'print-page preview-page';
-                                
-                                const canvas = document.createElement('canvas');
-                                const ctx = canvas.getContext('2d');
-                                canvas.width = viewport.width;
-                                canvas.height = viewport.height;
-                                
-                                await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-                                
-                                const previewW = Math.min(800, viewport.width);
-                                const previewH = (viewport.height / viewport.width) * previewW;
-                                pageWrapper.style.width = `${previewW}px`;
-                                pageWrapper.style.height = `${previewH}px`;
-
-                                pageWrapper.appendChild(canvas);
-                                printContainer.appendChild(pageWrapper);
-                                
-                                if (i % 3 === 0) {
-                                    await new Promise(resolve => setTimeout(resolve, 5));
-                                }
-                            }
+                            const pageWrapper = document.createElement('div');
+                            pageWrapper.className = 'print-page preview-page';
                             
-                            printBtn.removeAttribute('disabled');
-                            applyCSSFiltersAndScale();
-                            showToast(`បានផ្ទុកជោគជ័យចំនួន ${numPages} ទំព័រ!`, true);
-                        };
-                        fileReader.readAsArrayBuffer(file);
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            canvas.width = viewport.width;
+                            canvas.height = viewport.height;
+                            
+                            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+                            
+                            const previewW = Math.min(800, viewport.width);
+                            const previewH = (viewport.height / viewport.width) * previewW;
+                            pageWrapper.style.width = `${previewW}px`;
+                            pageWrapper.style.height = `${previewH}px`;
+
+                            pageWrapper.appendChild(canvas);
+                            printContainer.appendChild(pageWrapper);
+                            
+                            if (i % 3 === 0) await new Promise(r => setTimeout(r, 5)); // ការពារកុំឱ្យគាំង
+                        }
+                        
+                        printBtn.removeAttribute('disabled');
+                        applyCSSFiltersAndScale();
+                        showToast(`បានផ្ទុកជោគជ័យចំនួន ${numPages} ទំព័រ!`, true);
                     } catch (error) {
-                        console.error(error);
                         showToast("មានបញ្ហាក្នុងការអាន PDF។", false, false, false);
                     }
                 } 
                 else if (file.type.startsWith('image/')) {
                     showToast("កំពុងអានរូបភាព...", false, true, true);
-                    const reader = new FileReader();
-                    reader.onload = function(event) {
+                    try {
+                        const imgUrl = URL.createObjectURL(file);
                         const img = new Image();
                         img.onload = function() {
                             emptyState.classList.add('hidden');
@@ -494,15 +478,39 @@
 
                             printBtn.removeAttribute('disabled');
                             applyCSSFiltersAndScale();
+                            URL.revokeObjectURL(imgUrl);
                             showToast("បានផ្ទុករូបភាពជោគជ័យ!", true);
                         }
-                        img.src = event.target.result;
+                        img.src = imgUrl;
+                    } catch (e) {
+                        showToast("បញ្ហាក្នុងការអានរូបភាព", false, false, false);
                     }
-                    reader.readAsDataURL(file);
                 }
+            }
+
+            fileUpload.addEventListener('change', function(e) {
+                processFileContent(e.target.files[0], false);
             });
 
-            // មុខងារស្នូល៖ អនុវត្តពណ៌ និងការកំណត់ Scale គ្រប់ផ្ទាំង
+            // --- មុខងារគណនា និងអនុវត្តការកំណត់ (Scale & Rules) ---
+            function parsePageRange(str, totalPages) {
+                if (!str || str.trim() === '') return Array.from({length: totalPages}, (_, i) => i + 1);
+                let pages = new Set();
+                const parts = str.split(',');
+                for (let part of parts) {
+                    part = part.trim();
+                    if (!part) continue;
+                    if (part.includes('-')) {
+                        const [start, end] = part.split('-').map(s => parseInt(s, 10));
+                        if (!isNaN(start) && !isNaN(end)) for (let i = start; i <= end; i++) pages.add(i);
+                    } else {
+                        const num = parseInt(part, 10);
+                        if (!isNaN(num)) pages.add(num);
+                    }
+                }
+                return Array.from(pages);
+            }
+
             function applyCSSFiltersAndScale() {
                 const contrast = contrastSlider.value;
                 const brightness = brightnessSlider.value;
@@ -513,7 +521,6 @@
                 const pages = printContainer.querySelectorAll('.print-page');
                 const totalPages = pages.length;
 
-                // កំណត់ទំព័រទាំងអស់ត្រឡប់ទៅសភាពដើមសិន (ដើម្បីកុំឱ្យជាន់គ្នា)
                 pages.forEach(page => {
                     page.style.setProperty('--print-scale-x', 1);
                     page.style.setProperty('--print-scale-y', 1);
@@ -521,7 +528,6 @@
                     page.style.setProperty('--print-pos-y', '0%');
                 });
 
-                // ទាញយកផ្ទាំងកំណត់ Scale (Rule) ទាំងអស់មកដំណើរការ
                 const rules = rulesContainer.querySelectorAll('.scale-rule');
                 rules.forEach(rule => {
                     const pageStr = rule.querySelector('.page-range-input').value;
@@ -531,11 +537,9 @@
                     const posX = parseFloat(inputs[2].value);
                     const posY = parseFloat(inputs[3].value);
 
-                    // ស្វែងរកលេខទំព័រដែលត្រូវអនុវត្ត
                     const targetPages = parsePageRange(pageStr, totalPages);
-
                     targetPages.forEach(num => {
-                        const idx = num - 1; // ព្រោះ Array ចាប់ផ្តើមពី 0
+                        const idx = num - 1;
                         if (pages[idx]) {
                             pages[idx].style.setProperty('--print-scale-x', scaleX);
                             pages[idx].style.setProperty('--print-scale-y', scaleY);
@@ -544,7 +548,6 @@
                         }
                     });
                 });
-
                 updateUINumbers();
             }
 
@@ -561,12 +564,143 @@
                 contrastSlider.value = 100;
                 brightnessSlider.value = 100;
                 grayscaleCheck.checked = false;
-                
-                // លុបផ្ទាំង Scale ទាំងអស់ ចោលទុកតែ ១ដើមវិញ
                 rulesContainer.innerHTML = '';
                 rulesContainer.appendChild(createRuleElement(true));
-                
                 applyCSSFiltersAndScale();
+            });
+
+            // --- ប្រព័ន្ធរក្សាទុកឯកសារ (SAVE / LOAD SYSTEM - IndexedDB) ---
+            
+            // ផ្ទុកបញ្ជីទិន្នន័យដែលបាន Save មកបង្ហាញ
+            async function loadSavedList() {
+                savedListDiv.innerHTML = '';
+                try {
+                    const keys = await localforage.keys();
+                    const projectKeys = keys.filter(k => k.startsWith('project_'));
+                    
+                    if (projectKeys.length === 0) {
+                        savedListDiv.innerHTML = '<p class="text-xs text-gray-500 text-center py-2">មិនទាន់មានឯកសារទេ</p>';
+                        return;
+                    }
+
+                    for (const key of projectKeys) {
+                        const proj = await localforage.getItem(key);
+                        if (!proj) continue;
+                        
+                        const itemHtml = `
+                        <div class="bg-white border border-green-200 rounded p-2 flex justify-between items-center shadow-sm hover:border-green-400 transition group">
+                            <div class="overflow-hidden cursor-pointer flex-1" onclick="window.loadProject('${key}')">
+                                <p class="text-xs font-bold text-gray-700 truncate" title="${proj.name}">${proj.name}</p>
+                                <p class="text-[10px] text-gray-500"><i class="fa-regular fa-clock mr-1"></i>${proj.date}</p>
+                            </div>
+                            <button onclick="window.deleteProject('${key}')" class="ml-2 flex-shrink-0 w-6 h-6 flex justify-center items-center rounded bg-red-50 text-red-400 hover:bg-red-500 hover:text-white opacity-0 group-hover:opacity-100 transition" title="លុបចោល">
+                                <i class="fa-solid fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                        `;
+                        savedListDiv.insertAdjacentHTML('beforeend', itemHtml);
+                    }
+                } catch(e) {
+                    console.error("Error loading saved list", e);
+                }
+            }
+
+            // Save Action
+            saveProjectBtn.addEventListener('click', async () => {
+                if (!currentFileObject) return;
+                
+                showToast("កំពុងរក្សាទុកក្នុងម៉ាស៊ីន...", false, true, true);
+                
+                // ប្រមូលទិន្នន័យ Rules ទាំងអស់
+                const rulesData = Array.from(rulesContainer.querySelectorAll('.scale-rule')).map(rule => {
+                    const inputs = rule.querySelectorAll('input[type="number"]');
+                    return {
+                        pageStr: rule.querySelector('.page-range-input').value,
+                        scaleX: inputs[0].value,
+                        scaleY: inputs[1].value,
+                        posX: inputs[2].value,
+                        posY: inputs[3].value
+                    };
+                });
+
+                const projectData = {
+                    id: Date.now().toString(),
+                    name: currentFileObject.name,
+                    date: new Date().toLocaleString('km-KH'),
+                    file: currentFileObject, // រក្សាទុក File (Blob) ដោយផ្ទាល់
+                    settings: {
+                        contrast: contrastSlider.value,
+                        brightness: brightnessSlider.value,
+                        grayscale: grayscaleCheck.checked,
+                    },
+                    rules: rulesData
+                };
+                
+                try {
+                    await localforage.setItem('project_' + projectData.id, projectData);
+                    showToast("បានរក្សាទុកក្នុង Local Storage ជោគជ័យ!", true);
+                    loadSavedList();
+                } catch(e) {
+                    console.error(e);
+                    showToast("បរាជ័យក្នុងការ Save! ទំហំធំពេក ឬ Browser មិនអនុញ្ញាត។", false, false, false);
+                }
+            });
+
+            // ត្រូវដាក់នៅ Window ដើម្បីអាចចុចពី HTML ផ្ទាល់ (onclick)
+            window.loadProject = async function(key) {
+                showToast("កំពុងទាញយកឯកសារពីក្នុងម៉ាស៊ីន...", false, true, true);
+                const proj = await localforage.getItem(key);
+                if (!proj || !proj.file) {
+                    showToast("រកមិនឃើញឯកសារទេ!", false, false, false);
+                    return;
+                }
+                
+                // 1. ស្តារ Settings
+                contrastSlider.value = proj.settings.contrast;
+                brightnessSlider.value = proj.settings.brightness;
+                grayscaleCheck.checked = proj.settings.grayscale;
+                
+                // 2. ស្តារ Rules
+                rulesContainer.innerHTML = '';
+                if (proj.rules && proj.rules.length > 0) {
+                    proj.rules.forEach((rData, i) => {
+                        const ruleDiv = createRuleElement(i === 0);
+                        ruleDiv.querySelector('.page-range-input').value = rData.pageStr || '';
+                        
+                        const numInputs = ruleDiv.querySelectorAll('input[type="number"]');
+                        const rangeInputs = ruleDiv.querySelectorAll('input[type="range"]');
+                        
+                        numInputs[0].value = rangeInputs[0].value = rData.scaleX;
+                        numInputs[1].value = rangeInputs[1].value = rData.scaleY;
+                        numInputs[2].value = rangeInputs[2].value = rData.posX;
+                        numInputs[3].value = rangeInputs[3].value = rData.posY;
+                        
+                        rulesContainer.appendChild(ruleDiv);
+                    });
+                } else {
+                    rulesContainer.appendChild(createRuleElement(true));
+                }
+                updateUINumbers();
+                
+                // 3. Render ឯកសារ (isRestoring = true)
+                await processFileContent(proj.file, true);
+            };
+
+            window.deleteProject = async function(key) {
+                if(confirm("តើអ្នកពិតជាចង់លុបឯកសារដែលបានរក្សាទុកនេះមែនទេ?")) {
+                    await localforage.removeItem(key);
+                    loadSavedList();
+                    showToast("បានលុបជោគជ័យ!", true);
+                }
+            };
+
+            // អានបញ្ជីឯកសារពេលបើកកម្មវិធីដំបូង
+            loadSavedList();
+
+            // --- ប្រព័ន្ធ Print ---
+            paperSizeSelect.addEventListener('change', (e) => {
+                const size = e.target.value;
+                dynamicPrintStyle.innerHTML = size === 'auto' ? `@page { margin: 0mm; }` : `@page { size: ${size}; margin: 0mm; }`;
             });
 
             printBtn.addEventListener('click', () => {
@@ -574,7 +708,6 @@
                 if (pages.length === 0) return;
                 
                 showToast("កំពុងរៀបចំបញ្ជូនទៅម៉ាស៊ីនបោះពុម្ព...", false, true, true);
-                
                 const originalBtnText = printBtn.innerHTML;
                 printBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> កំពុងដំណើរការ...';
                 printBtn.setAttribute('disabled', 'true');
@@ -587,6 +720,7 @@
                 }, 1000);
             });
 
+            // មុខងារបង្ហាញសារ
             function showToast(message, isSuccess = false, keepOpen = false, isSpinner = false) {
                 const toast = document.getElementById('toast');
                 const toastMessage = document.getElementById('toast-message');
@@ -594,19 +728,11 @@
                 const iconContainer = toast.querySelector('div:first-child');
                 
                 iconContainer.className = `inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg ${isSuccess ? 'text-green-500 bg-green-100' : 'text-blue-500 bg-blue-100'}`;
-                
-                if (isSpinner) {
-                    iconContainer.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-                } else {
-                    iconContainer.innerHTML = isSuccess ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-circle-info"></i>';
-                }
+                iconContainer.innerHTML = isSpinner ? '<i class="fa-solid fa-spinner fa-spin"></i>' : (isSuccess ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-circle-info"></i>');
 
                 toast.classList.remove('translate-y-20', 'opacity-0');
-                
                 if (!keepOpen) {
-                    setTimeout(() => {
-                        toast.classList.add('translate-y-20', 'opacity-0');
-                    }, 3000);
+                    setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
                 }
             }
         });
