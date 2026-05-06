@@ -64,8 +64,8 @@
             width: 100%;
             height: 100%;
             object-fit: contain;
-            /* ពង្រីករូបភាពពីចំណុចកណ្តាល (Center) ទៅគ្រប់ជ្រុងទាំង ៤ */
-            transform: scale(var(--print-scale-ratio, 1));
+            /* ពង្រីករូបភាព និងរំកិលទីតាំងទៅតាមអ័ក្ស X និង Y */
+            transform: translate(var(--print-pos-x, 0%), var(--print-pos-y, 0%)) scale(var(--print-scale-x, 1), var(--print-scale-y, 1));
             transform-origin: center center;
             transition: transform 0.1s ease-out;
         }
@@ -127,8 +127,8 @@
                 width: 100% !important;
                 height: 100% !important;
                 object-fit: contain !important;
-                /* អនុវត្តទំហំ Scale ពិតប្រាកដដែលបញ្ជូនពី JavaScript (រីកពីកណ្តាល) */
-                transform: scale(var(--print-scale-ratio, 1)) !important;
+                /* អនុវត្តទំហំ Scale និងទីតាំងពិតប្រាកដដែលបញ្ជូនពី JavaScript */
+                transform: translate(var(--print-pos-x, 0%), var(--print-pos-y, 0%)) scale(var(--print-scale-x, 1), var(--print-scale-y, 1)) !important;
                 transform-origin: center center !important;
             }
         }
@@ -197,20 +197,42 @@
                 </div>
             </div>
 
-            <!-- រៀបចំទំហំ -->
+            <!-- រៀបចំទំហំ និងទីតាំង -->
             <div class="p-4 border-b border-gray-200 bg-blue-50">
-                <h2 class="font-bold text-gray-800 mb-3"><i class="fa-solid fa-expand mr-2"></i>៣. ការរៀបចំទំហំទំព័រ</h2>
+                <h2 class="font-bold text-gray-800 mb-3"><i class="fa-solid fa-expand mr-2"></i>៣. ទំហំ និងទីតាំងទំព័រ</h2>
+                
                 <div class="mb-3">
                     <div class="flex justify-between mb-1">
-                        <label class="text-sm font-medium text-gray-700">ពង្រីក/បង្រួម (Scale/Zoom)</label>
-                        <span id="scale-val" class="text-sm text-blue-700 font-bold">100%</span>
+                        <label class="text-xs font-medium text-gray-700">ពង្រីកទទឹង (Scale X)</label>
+                        <span id="scale-x-val" class="text-xs text-blue-700 font-bold">100%</span>
                     </div>
-                    <!-- អាចទាញពង្រីកបានដល់ 300% -->
-                    <input type="range" id="scale-slider" min="10" max="300" value="100" class="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer">
-                    <p class="text-xs text-gray-500 mt-2 leading-relaxed">
-                        <i class="fa-solid fa-circle-info mr-1"></i>ទាញឡើងដើម្បីពង្រីកអត្ថបទចេញពីកណ្តាលទៅជ្រុងទាំង៤ស្មើគ្នា និងបំបាត់គែមស (Margins) ពេល Print។
-                    </p>
+                    <input type="range" id="scale-x-slider" min="10" max="300" value="100" class="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer">
                 </div>
+
+                <div class="mb-3">
+                    <div class="flex justify-between mb-1">
+                        <label class="text-xs font-medium text-gray-700">ពង្រីកបណ្តោយ (Scale Y)</label>
+                        <span id="scale-y-val" class="text-xs text-blue-700 font-bold">100%</span>
+                    </div>
+                    <input type="range" id="scale-y-slider" min="10" max="300" value="100" class="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer">
+                </div>
+
+                <div class="mb-3">
+                    <div class="flex justify-between mb-1">
+                        <label class="text-xs font-medium text-gray-700">រំកិលឆ្វេង-ស្តាំ (Move X)</label>
+                        <span id="pos-x-val" class="text-xs text-blue-700 font-bold">0%</span>
+                    </div>
+                    <input type="range" id="pos-x-slider" min="-100" max="100" value="0" class="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer">
+                </div>
+
+                <div class="mb-2">
+                    <div class="flex justify-between mb-1">
+                        <label class="text-xs font-medium text-gray-700">រំកិលលើ-ក្រោម (Move Y)</label>
+                        <span id="pos-y-val" class="text-xs text-blue-700 font-bold">0%</span>
+                    </div>
+                    <input type="range" id="pos-y-slider" min="-100" max="100" value="0" class="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer">
+                </div>
+
                 <button id="reset-filters" class="mt-3 w-full text-sm text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 py-1.5 rounded transition">កំណត់ត្រឡប់ដើម (Reset All)</button>
             </div>
 
@@ -282,13 +304,23 @@
             const contrastSlider = document.getElementById('contrast-slider');
             const brightnessSlider = document.getElementById('brightness-slider');
             const grayscaleCheck = document.getElementById('grayscale-check');
-            const scaleSlider = document.getElementById('scale-slider');
+            
+            const scaleXSlider = document.getElementById('scale-x-slider');
+            const scaleYSlider = document.getElementById('scale-y-slider');
+            const posXSlider = document.getElementById('pos-x-slider');
+            const posYSlider = document.getElementById('pos-y-slider');
+            
             const paperSizeSelect = document.getElementById('paper-size-select');
             const dynamicPrintStyle = document.getElementById('dynamic-print-style');
             
             const contrastVal = document.getElementById('contrast-val');
             const brightnessVal = document.getElementById('brightness-val');
-            const scaleVal = document.getElementById('scale-val');
+            
+            const scaleXVal = document.getElementById('scale-x-val');
+            const scaleYVal = document.getElementById('scale-y-val');
+            const posXVal = document.getElementById('pos-x-val');
+            const posYVal = document.getElementById('pos-y-val');
+            
             const resetBtn = document.getElementById('reset-filters');
             
             paperSizeSelect.addEventListener('change', (e) => {
@@ -310,7 +342,10 @@
                 contrastSlider.value = 100;
                 brightnessSlider.value = 100;
                 grayscaleCheck.checked = false;
-                scaleSlider.value = 100;
+                scaleXSlider.value = 100;
+                scaleYSlider.value = 100;
+                posXSlider.value = 0;
+                posYSlider.value = 0;
                 updateUINumbers();
 
                 if (file.type === 'application/pdf') {
@@ -408,8 +443,10 @@
 
             // មុខងារគណនាទំហំសម្រាប់បង្ហាញលើអេក្រង់ ព្រមទាំងកំណត់អថេរ CSS សម្រាប់ការព្រីន
             function applyCSSFiltersAndScale() {
-                const scale = scaleSlider.value; 
-                const scaleRatio = scale / 100;
+                const scaleX = scaleXSlider.value; 
+                const scaleY = scaleYSlider.value; 
+                const posX = posXSlider.value;
+                const posY = posYSlider.value;
                 
                 const contrast = contrastSlider.value;
                 const brightness = brightnessSlider.value;
@@ -419,8 +456,11 @@
 
                 const pages = printContainer.querySelectorAll('.print-page');
                 pages.forEach(page => {
-                    // បញ្ជូនទិន្នន័យ Scale ទៅកាន់ CSS Variable (វាដើរតួសម្រាប់ទាំងអេក្រង់ និងម៉ាស៊ីនព្រីន)
-                    page.style.setProperty('--print-scale-ratio', scaleRatio);
+                    // បញ្ជូនទិន្នន័យទៅកាន់ CSS Variables សម្រាប់ព្រីន
+                    page.style.setProperty('--print-scale-x', scaleX / 100);
+                    page.style.setProperty('--print-scale-y', scaleY / 100);
+                    page.style.setProperty('--print-pos-x', posX + '%');
+                    page.style.setProperty('--print-pos-y', posY + '%');
                 });
 
                 updateUINumbers();
@@ -429,19 +469,28 @@
             function updateUINumbers() {
                 contrastVal.textContent = contrastSlider.value + '%';
                 brightnessVal.textContent = brightnessSlider.value + '%';
-                scaleVal.textContent = scaleSlider.value + '%';
+                scaleXVal.textContent = scaleXSlider.value + '%';
+                scaleYVal.textContent = scaleYSlider.value + '%';
+                posXVal.textContent = posXSlider.value + '%';
+                posYVal.textContent = posYSlider.value + '%';
             }
 
             contrastSlider.addEventListener('input', applyCSSFiltersAndScale);
             brightnessSlider.addEventListener('input', applyCSSFiltersAndScale);
             grayscaleCheck.addEventListener('change', applyCSSFiltersAndScale);
-            scaleSlider.addEventListener('input', applyCSSFiltersAndScale);
+            scaleXSlider.addEventListener('input', applyCSSFiltersAndScale);
+            scaleYSlider.addEventListener('input', applyCSSFiltersAndScale);
+            posXSlider.addEventListener('input', applyCSSFiltersAndScale);
+            posYSlider.addEventListener('input', applyCSSFiltersAndScale);
 
             resetBtn.addEventListener('click', () => {
                 contrastSlider.value = 100;
                 brightnessSlider.value = 100;
                 grayscaleCheck.checked = false;
-                scaleSlider.value = 100;
+                scaleXSlider.value = 100;
+                scaleYSlider.value = 100;
+                posXSlider.value = 0;
+                posYSlider.value = 0;
                 applyCSSFiltersAndScale();
             });
 
