@@ -4,6 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ប្រព័ន្ធគ្រប់គ្រងការបោះពុម្ព Epson (PWA)</title>
+    
+    <!-- Favicon និង Social Meta Tags -->
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/7812/7812078.png" type="image/png">
+    <meta property="og:title" content="ប្រព័ន្ធគ្រប់គ្រងការបោះពុម្ព Epson (PWA)">
+    <meta property="og:description" content="កម្មវិធីគ្រប់គ្រងការបោះពុម្ពឯកសារ មានមុខងារកែពណ៌ និងរៀបចំទំព័រ។">
+    <meta property="og:image" content="https://cdn-icons-png.flaticon.com/512/7812/7812078.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://cdn-icons-png.flaticon.com/512/7812/7812078.png">
+    
+    <!-- បញ្ចូល Font Khmer OS Battambang -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Battambang:wght@400;700&display=swap" rel="stylesheet">
+
     <!-- Tailwind CSS សម្រាប់ការតុបតែង -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome សម្រាប់រូបតំណាង (Icons) -->
@@ -16,40 +30,44 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
+    <!-- កន្លែងផ្ទុក CSS ទំហំក្រដាសដែលអាចផ្លាស់ប្តូរបាន (Dynamic Page Size) -->
+    <style id="dynamic-print-style">
+        /* លំនាំដើមគឺ A4 និងបិទមិនឱ្យបង្ហាញ ថ្ងៃខែ ម៉ោង ឬ Link វេបសាយ (margin: 0) */
+        @page { size: A4; margin: 0mm; }
+    </style>
+
     <style>
-        /* CSS បន្ថែមសម្រាប់ការកំណត់ទម្រង់ពេលបោះពុម្ពពិតប្រាកដ */
-        @media print {
-            body * {
-                visibility: hidden;
-            }
-            #print-canvas-container, #print-canvas-container * {
-                visibility: visible;
-            }
-            #print-canvas-container {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100vw;
-                height: 100vh;
-                /* ការប្រើ Flexbox ទីនេះជួយឱ្យ Canvas ស្ថិតនៅកណ្តាលក្រដាសព្រីនជានិច្ច */
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            }
-            canvas {
-                max-width: 100%;
-                max-height: 100%;
-                object-fit: contain;
-                /* ដាក់ស្រមោលក្រដាសចេញពេល Print */
-                box-shadow: none !important; 
-            }
-            /* លាក់ផ្ទាំងបញ្ជាផ្សេងៗពេលបោះពុម្ព */
-            .no-print {
-                display: none !important;
-            }
+        /* កំណត់ Font ខ្មែរជាគោល */
+        body {
+            font-family: 'Khmer OS Battambang', 'Battambang', sans-serif !important;
+        }
+
+        /* CSS សម្រាប់ការបង្ហាញនៅលើអេក្រង់ Preview */
+        #print-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+            padding: 24px;
+            width: 100%;
         }
         
-        /* តម្រឹម Canvas ឱ្យនៅកណ្តាល និងមាន Border */
+        .preview-page {
+            background-color: white;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+        
+        .preview-page canvas {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* តម្រឹមផ្ទៃខាងក្រោយ Preview */
         #canvas-wrapper {
             background-color: #f3f4f6;
             background-image: linear-gradient(45deg, #e5e7eb 25%, transparent 25%), 
@@ -58,41 +76,75 @@
                               linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
             background-size: 20px 20px;
             background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-            min-height: 400px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
+            overflow-y: auto;
         }
-        
-        canvas {
-            max-width: 100%;
-            max-height: 70vh;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
-            transition: all 0.2s ease;
+
+        /* CSS បន្ថែមសម្រាប់ការកំណត់ទម្រង់ពេលបោះពុម្ពពិតប្រាកដ (PRINT MODE) */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #print-container, #print-container * {
+                visibility: visible;
+            }
+            #print-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                display: block !important; /* រៀបជាលក្ខណៈ Block ដើម្បីឱ្យវាចុះបន្ទាត់ទំព័រថ្មី */
+                padding: 0 !important;
+                gap: 0 !important;
+                background: transparent !important;
+            }
+            
+            .print-page {
+                width: 100vw !important;
+                height: 100vh !important; /* បង្ខំឱ្យ ១ទំព័រស្មើនឹង ១ទំហំក្រដាសពេញ */
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                page-break-after: always !important; /* កាត់ផ្តាច់ទៅទំព័រថ្មី (Page Break) */
+                break-after: page !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            /* កុំឱ្យមានក្រដាសស ទទេរនៅសន្លឹកចុងក្រោយគេ */
+            .print-page:last-child {
+                page-break-after: auto !important;
+                break-after: auto !important;
+            }
+
+            .print-page canvas {
+                max-width: 100% !important;
+                max-height: 100% !important;
+                object-fit: contain !important; /* រក្សាសមាមាត្ររូបភាព មិនឱ្យខូចទ្រង់ទ្រាយ */
+            }
+            
+            /* លាក់ផ្ទាំងបញ្ជាផ្សេងៗពេលបោះពុម្ព */
+            .no-print {
+                display: none !important;
+            }
         }
     </style>
 </head>
 <body class="bg-gray-100 font-sans text-gray-800 h-screen flex flex-col overflow-hidden">
 
-    <!-- របារផ្នែកខាងលើ (Header / Status Bar) -->
+    <!-- របារផ្នែកខាងលើ -->
     <header class="bg-blue-800 text-white p-4 shadow-md flex justify-between items-center z-10 no-print">
         <div class="flex items-center gap-3">
-            <i class="fa-solid fa-print text-2xl"></i>
-            <h1 class="text-xl font-bold">Epson Print Manager <span class="text-xs bg-blue-600 px-2 py-1 rounded ml-2">PWA Mode</span></h1>
+            <img src="https://cdn-icons-png.flaticon.com/512/7812/7812078.png" alt="Print Logo" class="w-8 h-8 object-contain drop-shadow-md bg-white rounded-md p-1">
+            <h1 class="text-xl font-bold">Epson Print Manager <span class="text-xs bg-blue-600 px-2 py-1 rounded ml-2">Pro</span></h1>
         </div>
         
-        <!-- ស្ថានភាពម៉ាស៊ីន (Hardware Status Simulation) -->
         <div class="flex gap-4 text-sm">
             <div class="flex items-center gap-2 bg-blue-900 px-3 py-1 rounded border border-blue-700">
-                <i class="fa-solid fa-droplet text-cyan-400"></i>
-                <span>C: 85%</span>
-                <i class="fa-solid fa-droplet text-pink-500"></i>
-                <span>M: 60%</span>
-                <i class="fa-solid fa-droplet text-yellow-400"></i>
-                <span>Y: 90%</span>
-                <i class="fa-solid fa-droplet text-gray-900 drop-shadow-md"></i>
-                <span>K: <span class="text-red-400 font-bold">15%</span></span>
+                <i class="fa-solid fa-droplet text-cyan-400"></i><span>C: 85%</span>
+                <i class="fa-solid fa-droplet text-pink-500"></i><span>M: 60%</span>
+                <i class="fa-solid fa-droplet text-yellow-400"></i><span>Y: 90%</span>
+                <i class="fa-solid fa-droplet text-gray-900 drop-shadow-md"></i><span>K: 80%</span>
             </div>
             <div class="flex items-center gap-2 bg-green-700 px-3 py-1 rounded">
                 <i class="fa-solid fa-circle-check"></i>
@@ -101,30 +153,26 @@
         </div>
     </header>
 
-    <!-- តួខ្លួនកម្មវិធី (Main Content Area) -->
     <main class="flex-1 flex overflow-hidden">
         
-        <!-- របារបញ្ជាផ្នែកខាងឆ្វេង (Sidebar Controls) -->
+        <!-- របារបញ្ជាផ្នែកខាងឆ្វេង (Sidebar) -->
         <aside class="w-80 bg-white shadow-xl flex flex-col z-10 overflow-y-auto no-print">
             
-            <!-- ផ្នែកបញ្ចូលឯកសារ -->
             <div class="p-4 border-b border-gray-200">
                 <h2 class="font-bold text-gray-700 mb-3"><i class="fa-solid fa-file-import mr-2"></i>១. ជ្រើសរើសឯកសារ</h2>
-                <!-- បានបន្ថែម application/pdf ចូលទៅក្នុង accept របស់ input -->
-                <label for="file-upload" class="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition">
+                <label for="file-upload" class="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-blue-300 rounded-lg cursor-pointer bg-blue-50 hover:bg-blue-100 transition">
                     <div class="flex flex-col items-center justify-center pt-3 pb-4">
-                        <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 mb-1"></i>
-                        <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">ជ្រើសរើសឯកសារ</span></p>
-                        <p class="text-xs text-gray-500">គាំទ្រ: JPG, PNG, <span class="font-bold text-red-500">PDF</span></p>
+                        <i class="fa-solid fa-cloud-arrow-up text-2xl text-blue-500 mb-1"></i>
+                        <p class="mb-1 text-sm text-gray-600"><span class="font-semibold">ជ្រើសរើសឯកសារ (Multi-page)</span></p>
+                        <p class="text-xs text-gray-500">គាំទ្រ: JPG, PNG, <span class="font-bold text-red-500">PDF គ្រប់ទំព័រ</span></p>
                     </div>
                     <input id="file-upload" type="file" accept="image/*, application/pdf" class="hidden" />
                 </label>
             </div>
 
-            <!-- ផ្នែកកំណត់កម្រិតរូបភាព (Image Adjustment) -->
+            <!-- កែតម្រូវពណ៌ -->
             <div class="p-4 border-b border-gray-200">
                 <h2 class="font-bold text-gray-700 mb-3"><i class="fa-solid fa-sliders mr-2"></i>២. កែតម្រូវគុណភាពអក្សរ</h2>
-                
                 <div class="mb-3">
                     <div class="flex justify-between mb-1">
                         <label class="text-sm font-medium text-gray-700">កម្រិតភាពដិត (Contrast)</label>
@@ -132,7 +180,6 @@
                     </div>
                     <input type="range" id="contrast-slider" min="0" max="300" value="100" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
                 </div>
-
                 <div class="mb-3">
                     <div class="flex justify-between mb-1">
                         <label class="text-sm font-medium text-gray-700">ពន្លឺ (Brightness)</label>
@@ -140,18 +187,15 @@
                     </div>
                     <input type="range" id="brightness-slider" min="0" max="200" value="100" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
                 </div>
-
                 <div class="flex items-center">
                     <input id="grayscale-check" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
                     <label for="grayscale-check" class="ml-2 text-sm font-medium text-gray-700">បំប្លែងទៅជាស-ខ្មៅ (Grayscale)</label>
                 </div>
             </div>
 
-            <!-- ផ្នែករៀបចំទំហំ (Layout & Scaling) -->
+            <!-- រៀបចំទំហំ -->
             <div class="p-4 border-b border-gray-200 bg-blue-50">
                 <h2 class="font-bold text-gray-800 mb-3"><i class="fa-solid fa-expand mr-2"></i>៣. ការរៀបចំទំហំទំព័រ</h2>
-                
-                <!-- Image Scale -->
                 <div class="mb-3">
                     <div class="flex justify-between mb-1">
                         <label class="text-sm font-medium text-gray-700">ទំហំឯកសារ (Size)</label>
@@ -159,41 +203,42 @@
                     </div>
                     <input type="range" id="scale-slider" min="10" max="200" value="100" class="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer">
                 </div>
-
-                <!-- Page Expansion (Center Scale) -->
                 <div class="mb-2">
                     <div class="flex justify-between mb-1">
                         <label class="text-sm font-medium text-gray-700">ពង្រីកស៊ុមក្រដាស (Expand)</label>
                         <span id="page-expand-val" class="text-sm text-blue-700 font-bold">0%</span>
                     </div>
                     <input type="range" id="page-expand-slider" min="0" max="200" value="0" class="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer">
-                    <p class="text-xs text-green-700 mt-1"><i class="fa-solid fa-arrows-to-circle mr-1"></i>រីកស្មើគ្នាទៅជ្រុងទាំង៤</p>
                 </div>
-                
                 <button id="reset-filters" class="mt-3 w-full text-sm text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 py-1.5 rounded transition">កំណត់ត្រឡប់ដើម (Reset All)</button>
             </div>
 
-            <!-- ផ្នែកកំណត់ការបោះពុម្ព (Print Settings) -->
+            <!-- ការកំណត់ម៉ាស៊ីន (Hardware) -->
             <div class="p-4 flex-1">
                 <h2 class="font-bold text-gray-700 mb-3"><i class="fa-solid fa-gear mr-2"></i>៤. ការកំណត់ម៉ាស៊ីន</h2>
-                
                 <div class="space-y-3">
+                    <!-- បន្ថែមជម្រើសទំហំក្រដាស -->
                     <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">ទំហំក្រដាស (Paper Size)</label>
+                        <select id="paper-size-select" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2">
+                            <option value="A4" selected>A4 (ស្តង់ដារ)</option>
+                            <option value="A3">A3 (ក្រដាសធំ)</option>
+                            <option value="A5">A5</option>
+                            <option value="Letter">Letter</option>
+                            <option value="Legal">Legal</option>
+                            <option value="auto">ស្វ័យប្រវត្តិ (Auto)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">ប្រភេទក្រដាស (Media)</label>
                         <select class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2">
                             <option value="plain">ក្រដាសធម្មតា (Plain Paper)</option>
                             <option value="glossy" selected>ក្រដាសរលោង (Premium Glossy)</option>
                         </select>
                     </div>
-                    <div>
-                        <select class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2">
-                            <option value="720">ធម្មតា - 720 DPI</option>
-                            <option value="1440" selected>ខ្ពស់ - 1440 DPI</option>
-                        </select>
-                    </div>
                 </div>
             </div>
 
-            <!-- ប៊ូតុងបញ្ជាបោះពុម្ព (Action Button) -->
             <div class="p-4 bg-gray-50 border-t border-gray-200">
                 <button id="print-btn" class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-lg px-5 py-3 text-center transition shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
                     <i class="fa-solid fa-print mr-2"></i> បញ្ជាបោះពុម្ព (Print Now)
@@ -203,25 +248,23 @@
 
         <!-- ផ្ទាំងបង្ហាញរូបភាព (Preview Area) -->
         <section class="flex-1 flex flex-col relative bg-gray-200">
-            <!-- របារឧបករណ៍ Preview -->
             <div class="bg-white border-b border-gray-300 px-4 py-2 flex justify-between items-center shadow-sm z-10 no-print">
-                <span class="font-semibold text-gray-700"><i class="fa-solid fa-eye text-blue-600 mr-2"></i>ការបង្ហាញជាមុន (Live Preview)</span>
+                <span class="font-semibold text-gray-700"><i class="fa-solid fa-eye text-blue-600 mr-2"></i>ការបង្ហាញជាមុនគ្រប់ទំព័រ (Live Preview)</span>
             </div>
 
-            <!-- កន្លែងផ្ទុក Canvas សម្រាប់គូររូប -->
-            <div id="canvas-wrapper" class="flex-1 relative overflow-auto p-4">
+            <!-- កន្លែងផ្ទុក (Scrollable wrapper) -->
+            <div id="canvas-wrapper" class="flex-1 relative p-4">
                 <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 pointer-events-none">
-                    <i class="fa-regular fa-file-image text-6xl mb-4"></i>
-                    <p class="text-lg">មិនទាន់មានឯកសារ។ សូមជ្រើសរើសរូបភាព ឬ PDF។</p>
+                    <img src="https://cdn-icons-png.flaticon.com/512/7812/7812078.png" alt="Empty State" class="w-24 h-24 mb-4 opacity-40 grayscale drop-shadow-lg">
+                    <p class="text-lg text-gray-500">មិនទាន់មានឯកសារ។ សូមជ្រើសរើសរូបភាព ឬ PDF។</p>
                 </div>
                 
-                <!-- Canvas នេះនឹងត្រូវបង្ហាញរូបភាព និងកែតម្រូវពណ៌ -->
-                <div id="print-canvas-container">
-                     <canvas id="preview-canvas" class="hidden"></canvas>
+                <!-- Container សម្រាប់ដាក់ទំព័រទាំងអស់ (Multi-page stack) -->
+                <div id="print-container" class="hidden">
+                     <!-- Canvas នីមួយៗនឹងត្រូវបានបង្កើតនៅទីនេះដោយ JavaScript -->
                 </div>
             </div>
             
-            <!-- សារជូនដំណឹង (Toast Notification) -->
             <div id="toast" class="absolute bottom-5 right-5 flex items-center w-full max-w-xs p-4 space-x-3 text-gray-500 bg-white rounded-lg shadow-lg transform transition-transform translate-y-20 opacity-0 no-print z-50" role="alert">
                 <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-blue-500 bg-blue-100 rounded-lg">
                     <i class="fa-solid fa-circle-info"></i>
@@ -234,143 +277,161 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const fileUpload = document.getElementById('file-upload');
-            const canvas = document.getElementById('preview-canvas');
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            const printContainer = document.getElementById('print-container');
             const emptyState = document.getElementById('empty-state');
             const printBtn = document.getElementById('print-btn');
             
-            // ឧបករណ៍គ្រប់គ្រងពណ៌ និងទំហំ
+            // ឧបករណ៍
             const contrastSlider = document.getElementById('contrast-slider');
             const brightnessSlider = document.getElementById('brightness-slider');
             const grayscaleCheck = document.getElementById('grayscale-check');
             const scaleSlider = document.getElementById('scale-slider');
             const pageExpandSlider = document.getElementById('page-expand-slider');
+            const paperSizeSelect = document.getElementById('paper-size-select');
+            const dynamicPrintStyle = document.getElementById('dynamic-print-style');
             
-            // Text Values
+            // UI Values
             const contrastVal = document.getElementById('contrast-val');
             const brightnessVal = document.getElementById('brightness-val');
             const scaleVal = document.getElementById('scale-val');
             const pageExpandVal = document.getElementById('page-expand-val');
             const resetBtn = document.getElementById('reset-filters');
             
-            let originalImage = null;
+            // អថេរផ្ទុកទិន្នន័យទំព័រទាំងអស់
+            let pagesData = [];
 
-            // មុខងារនៅពេលអ្នកប្រើប្រាស់ជ្រើសរើសឯកសារ (រូបភាព ឬ PDF)
+            // ១. ការផ្លាស់ប្តូរទំហំក្រដាស
+            paperSizeSelect.addEventListener('change', (e) => {
+                const size = e.target.value;
+                if (size === 'auto') {
+                    // លុប Header តែមិនកំណត់ទំហំខ្នាត
+                    dynamicPrintStyle.innerHTML = `@page { margin: 0mm; }`;
+                } else {
+                    // កំណត់ទំហំខ្នាត និងលុប Header
+                    dynamicPrintStyle.innerHTML = `@page { size: ${size}; margin: 0mm; }`;
+                }
+            });
+
+            // ២. ពេលអាប់ឡូតឯកសារ
             fileUpload.addEventListener('change', async function(e) {
                 const file = e.target.files[0];
                 if (!file) return;
 
-                // ពិនិត្យមើលថាតើវាជាឯកសារ PDF ឬទេ?
+                // ជម្រះទិន្នន័យចាស់
+                pagesData = [];
+                printContainer.innerHTML = '';
+                printBtn.setAttribute('disabled', 'true');
+
                 if (file.type === 'application/pdf') {
-                    showToast("កំពុងអានឯកសារ PDF...", false, true); // បង្ហាញសារថាកំពុង Load
+                    showToast("កំពុងអានឯកសារ PDF... សូមរង់ចាំបន្តិច!", false, true);
                     
                     try {
                         const fileReader = new FileReader();
                         fileReader.onload = async function() {
                             const typedarray = new Uint8Array(this.result);
-                            
-                            // ប្រើប្រាស់ PDF.js ដើម្បីអាន
                             const pdf = await pdfjsLib.getDocument(typedarray).promise;
                             
-                            // ទាញយកទំព័រទី១ នៃ PDF (កំណត់ត្រឹមទំព័រទី១ សម្រាប់កម្មវិធីនេះ)
-                            const page = await pdf.getPage(1);
-                            
-                            // កំណត់ទំហំ scale=2.0 ដើម្បីឱ្យរូបភាព PDF មានភាពច្បាស់ល្អពេលព្រីន
-                            const viewport = page.getViewport({ scale: 2.0 });
-                            
-                            // បង្កើត Canvas មួយទៀតសម្រាប់ Render PDF
-                            const tempCanvas = document.createElement('canvas');
-                            const tempCtx = tempCanvas.getContext('2d');
-                            tempCanvas.width = viewport.width;
-                            tempCanvas.height = viewport.height;
-                            
-                            const renderContext = {
-                                canvasContext: tempCtx,
-                                viewport: viewport
-                            };
-                            
-                            // គូរ PDF ចូលក្នុង Canvas នោះ
-                            await page.render(renderContext).promise;
-                            
-                            // បំប្លែង Canvas ដែលមាន PDF ទៅជារូបភាព (Image Object) 
-                            // ដើម្បីអាចប្រើប្រាស់មុខងារ កែពណ៌ និង ទំហំបានដូចរូបធម្មតា
-                            const img = new Image();
-                            img.onload = function() {
-                                originalImage = img;
-                                emptyState.classList.add('hidden');
-                                canvas.classList.remove('hidden');
-                                printBtn.removeAttribute('disabled');
+                            // Loop គ្រប់ទំព័ររបស់ PDF
+                            for (let i = 1; i <= pdf.numPages; i++) {
+                                document.getElementById('toast-message').textContent = `កំពុងរៀបចំទំព័រទី ${i} នៃ ${pdf.numPages}...`;
                                 
-                                applyFiltersAndScale();
-                                showToast("PDF ត្រូវបានផ្ទុកជោគជ័យ!", true);
+                                const page = await pdf.getPage(i);
+                                // Scale 2.0 ដើម្បីឱ្យរូបភាពច្បាស់ពេល Print
+                                const viewport = page.getViewport({ scale: 2.0 }); 
+                                
+                                const tempCanvas = document.createElement('canvas');
+                                const tempCtx = tempCanvas.getContext('2d');
+                                tempCanvas.width = viewport.width;
+                                tempCanvas.height = viewport.height;
+                                
+                                await page.render({ canvasContext: tempCtx, viewport: viewport }).promise;
+                                
+                                // បំប្លែង Canvas នីមួយៗទៅជា Image Object
+                                const img = new Image();
+                                await new Promise(resolve => {
+                                    img.onload = resolve;
+                                    img.src = tempCanvas.toDataURL('image/png');
+                                });
+                                
+                                pagesData.push(img);
                             }
-                            img.src = tempCanvas.toDataURL('image/png');
+                            
+                            emptyState.classList.add('hidden');
+                            printContainer.classList.remove('hidden');
+                            printBtn.removeAttribute('disabled');
+                            
+                            renderAllPages(); // បង្ហាញគ្រប់ទំព័រ
+                            showToast(`បានផ្ទុកជោគជ័យចំនួន ${pdf.numPages} ទំព័រ!`, true);
                         };
                         fileReader.readAsArrayBuffer(file);
                         
                     } catch (error) {
-                        console.error('Error rendering PDF:', error);
-                        showToast("មានបញ្ហាក្នុងការអាន PDF នេះ។");
+                        console.error(error);
+                        showToast("មានបញ្ហាក្នុងការអាន PDF។");
                     }
                 } 
-                // ប្រសិនបើជាឯកសាររូបភាពធម្មតា (JPG, PNG)
                 else if (file.type.startsWith('image/')) {
+                    // ប្រសិនបើជាកាតព្វកិច្ចរូបភាពតែ១សន្លឹក
                     const reader = new FileReader();
                     reader.onload = function(event) {
                         const img = new Image();
                         img.onload = function() {
-                            originalImage = img;
+                            pagesData.push(img);
                             emptyState.classList.add('hidden');
-                            canvas.classList.remove('hidden');
+                            printContainer.classList.remove('hidden');
                             printBtn.removeAttribute('disabled');
                             
-                            applyFiltersAndScale();
+                            renderAllPages();
                         }
                         img.src = event.target.result;
                     }
                     reader.readAsDataURL(file);
-                } else {
-                    showToast("សូមជ្រើសរើសតែរូបភាព ឬឯកសារ PDF ប៉ុណ្ណោះ។");
                 }
             });
 
-            // មុខងារគណនាការតម្រឹមកណ្តាល និងអនុវត្តពណ៌ (Core Logic for Center Expansion)
-            function applyFiltersAndScale() {
-                if (!originalImage) return;
+            // ៣. មុខងារគូរទំព័រទាំងអស់ឡើងវិញ (Render & Filters)
+            function renderAllPages() {
+                if (pagesData.length === 0) return;
 
-                // ១. ទាញយកតម្លៃពី Sliders
-                const scale = scaleSlider.value / 100; // ទំហំរូបភាព
-                const pageExpand = pageExpandSlider.value / 100; // ទំហំស៊ុមក្រដាសបន្ថែម
-                
+                printContainer.innerHTML = ''; // លុប Canvas ចាស់ៗចោល
+
+                const scale = scaleSlider.value / 100;
+                const pageExpand = pageExpandSlider.value / 100;
                 const contrast = contrastSlider.value;
                 const brightness = brightnessSlider.value;
                 const grayscale = grayscaleCheck.checked ? 100 : 0;
 
-                // ២. គណនាទំហំរូបភាពក្រោយពេលពង្រីក/បង្រួម (Image Dimension)
-                const imgW = originalImage.width * scale;
-                const imgH = originalImage.height * scale;
+                // គណនា និងគូរសម្រាប់ទំព័រនីមួយៗ
+                pagesData.forEach((imgObj) => {
+                    // បង្កើត Container សម្រាប់ ១ទំព័រ
+                    const pageWrapper = document.createElement('div');
+                    pageWrapper.className = 'print-page preview-page';
+                    
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                    
+                    const imgW = imgObj.width * scale;
+                    const imgH = imgObj.height * scale;
+                    const extraWidth = imgW * pageExpand;
+                    const extraHeight = imgH * pageExpand;
 
-                // ៣. គណនាទំហំក្រដាស (Canvas Dimension) ដោយបូកបន្ថែមស៊ុមដែលពង្រីក
-                const extraWidth = imgW * pageExpand;
-                const extraHeight = imgH * pageExpand;
+                    canvas.width = imgW + extraWidth;
+                    canvas.height = imgH + extraHeight;
 
-                canvas.width = imgW + extraWidth;
-                canvas.height = imgH + extraHeight;
+                    const dx = extraWidth / 2;
+                    const dy = extraHeight / 2;
 
-                // ៤. គណនាចំណុចដើម្បីគូររូបភាពឱ្យចំកណ្តាលក្រដាសជានិច្ច (Center Offset)
-                // ដោយចែកទំហំដែលសល់ជា ២ (ឆ្វេង/ស្តាំ, លើ/ក្រោម)
-                const dx = extraWidth / 2;
-                const dy = extraHeight / 2;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                // ៥. ចាក់ពណ៌សជា Background ក្រដាស (ដើម្បីពេល Print មិនលោតពណ៌ខ្មៅ)
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.filter = `contrast(${contrast}%) brightness(${brightness}%) grayscale(${grayscale}%)`;
+                    ctx.drawImage(imgObj, dx, dy, imgW, imgH);
+                    
+                    pageWrapper.appendChild(canvas);
+                    printContainer.appendChild(pageWrapper);
+                });
 
-                // ៦. អនុវត្ត Filter និងគូររូបភាពចំកណ្តាល
-                ctx.filter = `contrast(${contrast}%) brightness(${brightness}%) grayscale(${grayscale}%)`;
-                ctx.drawImage(originalImage, dx, dy, imgW, imgH);
-
-                // ៧. Update អក្សរបង្ហាញលើ UI
+                // Update UI
                 contrastVal.textContent = contrast + '%';
                 brightnessVal.textContent = brightness + '%';
                 scaleVal.textContent = scaleSlider.value + '%';
@@ -378,11 +439,11 @@
             }
 
             // ស្តាប់ការផ្លាស់ប្តូរនៅលើ Slider ទាំងអស់
-            contrastSlider.addEventListener('input', applyFiltersAndScale);
-            brightnessSlider.addEventListener('input', applyFiltersAndScale);
-            grayscaleCheck.addEventListener('change', applyFiltersAndScale);
-            scaleSlider.addEventListener('input', applyFiltersAndScale);
-            pageExpandSlider.addEventListener('input', applyFiltersAndScale);
+            contrastSlider.addEventListener('input', renderAllPages);
+            brightnessSlider.addEventListener('input', renderAllPages);
+            grayscaleCheck.addEventListener('change', renderAllPages);
+            scaleSlider.addEventListener('input', renderAllPages);
+            pageExpandSlider.addEventListener('input', renderAllPages);
 
             // មុខងារ Reset
             resetBtn.addEventListener('click', () => {
@@ -391,13 +452,13 @@
                 grayscaleCheck.checked = false;
                 scaleSlider.value = 100;
                 pageExpandSlider.value = 0;
-                applyFiltersAndScale();
+                renderAllPages();
             });
 
             // Print Action
             printBtn.addEventListener('click', () => {
-                if (!originalImage) return;
-                showToast("កំពុងរៀបចំទំព័រ និងបញ្ជូនទិន្នន័យ...", true);
+                if (pagesData.length === 0) return;
+                showToast("កំពុងរៀបចំការបោះពុម្ព...", true);
                 
                 const originalBtnText = printBtn.innerHTML;
                 printBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> កំពុងដំណើរការ...';
@@ -405,7 +466,6 @@
                 
                 setTimeout(() => {
                     window.print(); 
-                    
                     printBtn.innerHTML = originalBtnText;
                     printBtn.removeAttribute('disabled');
                 }, 1000);
@@ -416,8 +476,6 @@
             const toastMessage = document.getElementById('toast-message');
             function showToast(message, isSuccess = false, keepOpen = false) {
                 toastMessage.textContent = message;
-                
-                // ដូរពណ៌ icon តាមប្រភេទសារ
                 const iconContainer = toast.querySelector('div:first-child');
                 iconContainer.className = `inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg ${isSuccess ? 'text-green-500 bg-green-100' : 'text-blue-500 bg-blue-100'}`;
                 iconContainer.innerHTML = isSuccess ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-circle-info"></i>';
