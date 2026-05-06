@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ប្រព័ន្ធគ្រប់គ្រងការបោះពុម្ព Epson (PWA)</title>
+    <!-- Tailwind CSS សម្រាប់ការតុបតែង -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome សម្រាប់រូបតំណាង (Icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* CSS បន្ថែមសម្រាប់ការកំណត់ទម្រង់ពេលបោះពុម្ពពិតប្រាកដ */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #print-canvas-container, #print-canvas-container * {
+                visibility: visible;
+            }
+            #print-canvas-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100vw;
+                height: 100vh;
+                /* ការប្រើ Flexbox ទីនេះជួយឱ្យ Canvas ស្ថិតនៅកណ្តាលក្រដាសព្រីនជានិច្ច */
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            canvas {
+                max-width: 100%;
+                max-height: 100%;
+                object-fit: contain;
+                /* ដាក់ស្រមោលក្រដាសចេញពេល Print */
+                box-shadow: none !important; 
+            }
+            /* លាក់ផ្ទាំងបញ្ជាផ្សេងៗពេលបោះពុម្ព */
+            .no-print {
+                display: none !important;
+            }
+        }
+        
+        /* តម្រឹម Canvas ឱ្យនៅកណ្តាល និងមាន Border */
+        #canvas-wrapper {
+            background-color: #f3f4f6;
+            background-image: linear-gradient(45deg, #e5e7eb 25%, transparent 25%), 
+                              linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #e5e7eb 75%), 
+                              linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        canvas {
+            max-width: 100%;
+            max-height: 70vh;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800 h-screen flex flex-col overflow-hidden">
+
+    <!-- របារផ្នែកខាងលើ (Header / Status Bar) -->
+    <header class="bg-blue-800 text-white p-4 shadow-md flex justify-between items-center z-10 no-print">
+        <div class="flex items-center gap-3">
+            <i class="fa-solid fa-print text-2xl"></i>
+            <h1 class="text-xl font-bold">Epson Print Manager <span class="text-xs bg-blue-600 px-2 py-1 rounded ml-2">PWA Mode</span></h1>
+        </div>
+        
+        <!-- ស្ថានភាពម៉ាស៊ីន (Hardware Status Simulation) -->
+        <div class="flex gap-4 text-sm">
+            <div class="flex items-center gap-2 bg-blue-900 px-3 py-1 rounded border border-blue-700">
+                <i class="fa-solid fa-droplet text-cyan-400"></i>
+                <span>C: 85%</span>
+                <i class="fa-solid fa-droplet text-pink-500"></i>
+                <span>M: 60%</span>
+                <i class="fa-solid fa-droplet text-yellow-400"></i>
+                <span>Y: 90%</span>
+                <i class="fa-solid fa-droplet text-gray-900 drop-shadow-md"></i>
+                <span>K: <span class="text-red-400 font-bold">15%</span></span>
+            </div>
+            <div class="flex items-center gap-2 bg-green-700 px-3 py-1 rounded">
+                <i class="fa-solid fa-circle-check"></i>
+                <span>ម៉ាស៊ីនត្រៀមរួចរាល់</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- តួខ្លួនកម្មវិធី (Main Content Area) -->
+    <main class="flex-1 flex overflow-hidden">
+        
+        <!-- របារបញ្ជាផ្នែកខាងឆ្វេង (Sidebar Controls) -->
+        <aside class="w-80 bg-white shadow-xl flex flex-col z-10 overflow-y-auto no-print">
+            
+            <!-- ផ្នែកបញ្ចូលឯកសារ -->
+            <div class="p-4 border-b border-gray-200">
+                <h2 class="font-bold text-gray-700 mb-3"><i class="fa-solid fa-file-import mr-2"></i>១. ជ្រើសរើសឯកសារ</h2>
+                <label for="file-upload" class="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition">
+                    <div class="flex flex-col items-center justify-center pt-3 pb-4">
+                        <i class="fa-solid fa-cloud-arrow-up text-2xl text-gray-400 mb-1"></i>
+                        <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">ជ្រើសរើសរូបភាព</span></p>
+                    </div>
+                    <input id="file-upload" type="file" accept="image/*" class="hidden" />
+                </label>
+            </div>
+
+            <!-- ផ្នែកកំណត់កម្រិតរូបភាព (Image Adjustment) -->
+            <div class="p-4 border-b border-gray-200">
+                <h2 class="font-bold text-gray-700 mb-3"><i class="fa-solid fa-sliders mr-2"></i>២. កែតម្រូវគុណភាពអក្សរ</h2>
+                
+                <div class="mb-3">
+                    <div class="flex justify-between mb-1">
+                        <label class="text-sm font-medium text-gray-700">កម្រិតភាពដិត (Contrast)</label>
+                        <span id="contrast-val" class="text-sm text-blue-600 font-bold">100%</span>
+                    </div>
+                    <input type="range" id="contrast-slider" min="0" max="300" value="100" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                </div>
+
+                <div class="mb-3">
+                    <div class="flex justify-between mb-1">
+                        <label class="text-sm font-medium text-gray-700">ពន្លឺ (Brightness)</label>
+                        <span id="brightness-val" class="text-sm text-blue-600 font-bold">100%</span>
+                    </div>
+                    <input type="range" id="brightness-slider" min="0" max="200" value="100" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                </div>
+
+                <div class="flex items-center">
+                    <input id="grayscale-check" type="checkbox" value="" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                    <label for="grayscale-check" class="ml-2 text-sm font-medium text-gray-700">បំប្លែងទៅជាស-ខ្មៅ (Grayscale)</label>
+                </div>
+            </div>
+
+            <!-- ផ្នែករៀបចំទំហំ (Layout & Scaling - NEW FEATURE) -->
+            <div class="p-4 border-b border-gray-200 bg-blue-50">
+                <h2 class="font-bold text-gray-800 mb-3"><i class="fa-solid fa-expand mr-2"></i>៣. ការរៀបចំទំហំទំព័រ</h2>
+                
+                <!-- Image Scale -->
+                <div class="mb-3">
+                    <div class="flex justify-between mb-1">
+                        <label class="text-sm font-medium text-gray-700">ទំហំរូបភាព (Image Size)</label>
+                        <span id="scale-val" class="text-sm text-blue-700 font-bold">100%</span>
+                    </div>
+                    <input type="range" id="scale-slider" min="10" max="200" value="100" class="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer">
+                </div>
+
+                <!-- Page Expansion (Center Scale) -->
+                <div class="mb-2">
+                    <div class="flex justify-between mb-1">
+                        <label class="text-sm font-medium text-gray-700">ពង្រីកស៊ុមក្រដាស (Page Expand)</label>
+                        <span id="page-expand-val" class="text-sm text-blue-700 font-bold">0%</span>
+                    </div>
+                    <input type="range" id="page-expand-slider" min="0" max="200" value="0" class="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer">
+                    <p class="text-xs text-green-700 mt-1"><i class="fa-solid fa-arrows-to-circle mr-1"></i>រីកស្មើគ្នាទៅជ្រុងទាំង៤ (រូបនៅកណ្តាល)</p>
+                </div>
+                
+                <button id="reset-filters" class="mt-3 w-full text-sm text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 py-1.5 rounded transition">កំណត់ត្រឡប់ដើម (Reset All)</button>
+            </div>
+
+            <!-- ផ្នែកកំណត់ការបោះពុម្ព (Print Settings) -->
+            <div class="p-4 flex-1">
+                <h2 class="font-bold text-gray-700 mb-3"><i class="fa-solid fa-gear mr-2"></i>៤. ការកំណត់ម៉ាស៊ីន</h2>
+                
+                <div class="space-y-3">
+                    <div>
+                        <select class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2">
+                            <option value="plain">ក្រដាសធម្មតា (Plain Paper)</option>
+                            <option value="glossy" selected>ក្រដាសរលោង (Premium Glossy)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2">
+                            <option value="720">ធម្មតា - 720 DPI</option>
+                            <option value="1440" selected>ខ្ពស់ - 1440 DPI</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ប៊ូតុងបញ្ជាបោះពុម្ព (Action Button) -->
+            <div class="p-4 bg-gray-50 border-t border-gray-200">
+                <button id="print-btn" class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-lg px-5 py-3 text-center transition shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                    <i class="fa-solid fa-print mr-2"></i> បញ្ជាបោះពុម្ព (Print Now)
+                </button>
+            </div>
+        </aside>
+
+        <!-- ផ្ទាំងបង្ហាញរូបភាព (Preview Area) -->
+        <section class="flex-1 flex flex-col relative bg-gray-200">
+            <!-- របារឧបករណ៍ Preview -->
+            <div class="bg-white border-b border-gray-300 px-4 py-2 flex justify-between items-center shadow-sm z-10 no-print">
+                <span class="font-semibold text-gray-700"><i class="fa-solid fa-eye text-blue-600 mr-2"></i>ការបង្ហាញជាមុន (Live Preview)</span>
+            </div>
+
+            <!-- កន្លែងផ្ទុក Canvas សម្រាប់គូររូប -->
+            <div id="canvas-wrapper" class="flex-1 relative overflow-auto p-4">
+                <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 pointer-events-none">
+                    <i class="fa-regular fa-image text-6xl mb-4"></i>
+                    <p class="text-lg">មិនទាន់មានឯកសារ។ សូមជ្រើសរើសរូបភាពពីខាងឆ្វេង។</p>
+                </div>
+                
+                <!-- Canvas នេះនឹងត្រូវបង្ហាញរូបភាព និងកែតម្រូវពណ៌ -->
+                <div id="print-canvas-container">
+                     <canvas id="preview-canvas" class="hidden"></canvas>
+                </div>
+            </div>
+            
+            <!-- សារជូនដំណឹង (Toast Notification) -->
+            <div id="toast" class="absolute bottom-5 right-5 flex items-center w-full max-w-xs p-4 space-x-3 text-gray-500 bg-white rounded-lg shadow-lg transform transition-transform translate-y-20 opacity-0 no-print" role="alert">
+                <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-green-500 bg-green-100 rounded-lg">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div class="ml-3 text-sm font-normal" id="toast-message">កំពុងបញ្ជូនទិន្នន័យទៅម៉ាស៊ីន...</div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const fileUpload = document.getElementById('file-upload');
+            const canvas = document.getElementById('preview-canvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            const emptyState = document.getElementById('empty-state');
+            const printBtn = document.getElementById('print-btn');
+            
+            // ឧបករណ៍គ្រប់គ្រងពណ៌ និងទំហំ
+            const contrastSlider = document.getElementById('contrast-slider');
+            const brightnessSlider = document.getElementById('brightness-slider');
+            const grayscaleCheck = document.getElementById('grayscale-check');
+            const scaleSlider = document.getElementById('scale-slider');
+            const pageExpandSlider = document.getElementById('page-expand-slider');
+            
+            // Text Values
+            const contrastVal = document.getElementById('contrast-val');
+            const brightnessVal = document.getElementById('brightness-val');
+            const scaleVal = document.getElementById('scale-val');
+            const pageExpandVal = document.getElementById('page-expand-val');
+            const resetBtn = document.getElementById('reset-filters');
+            
+            let originalImage = null;
+
+            // មុខងារនៅពេលអ្នកប្រើប្រាស់ជ្រើសរើសរូបភាព
+            fileUpload.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        originalImage = img;
+                        emptyState.classList.add('hidden');
+                        canvas.classList.remove('hidden');
+                        printBtn.removeAttribute('disabled');
+                        
+                        applyFiltersAndScale();
+                    }
+                    img.src = event.target.result;
+                }
+                reader.readAsDataURL(file);
+            });
+
+            // មុខងារគណនាការតម្រឹមកណ្តាល និងអនុវត្តពណ៌ (Core Logic for Center Expansion)
+            function applyFiltersAndScale() {
+                if (!originalImage) return;
+
+                // ១. ទាញយកតម្លៃពី Sliders
+                const scale = scaleSlider.value / 100; // ទំហំរូបភាព
+                const pageExpand = pageExpandSlider.value / 100; // ទំហំស៊ុមក្រដាសបន្ថែម
+                
+                const contrast = contrastSlider.value;
+                const brightness = brightnessSlider.value;
+                const grayscale = grayscaleCheck.checked ? 100 : 0;
+
+                // ២. គណនាទំហំរូបភាពក្រោយពេលពង្រីក/បង្រួម (Image Dimension)
+                const imgW = originalImage.width * scale;
+                const imgH = originalImage.height * scale;
+
+                // ៣. គណនាទំហំក្រដាស (Canvas Dimension) ដោយបូកបន្ថែមស៊ុមដែលពង្រីក
+                const extraWidth = imgW * pageExpand;
+                const extraHeight = imgH * pageExpand;
+
+                canvas.width = imgW + extraWidth;
+                canvas.height = imgH + extraHeight;
+
+                // ៤. គណនាចំណុចដើម្បីគូររូបភាពឱ្យចំកណ្តាលក្រដាសជានិច្ច (Center Offset)
+                // ដោយចែកទំហំដែលសល់ជា ២ (ឆ្វេង/ស្តាំ, លើ/ក្រោម)
+                const dx = extraWidth / 2;
+                const dy = extraHeight / 2;
+
+                // ៥. ចាក់ពណ៌សជា Background ក្រដាស (ដើម្បីពេល Print មិនលោតពណ៌ខ្មៅ)
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // ៦. អនុវត្ត Filter និងគូររូបភាពចំកណ្តាល
+                ctx.filter = `contrast(${contrast}%) brightness(${brightness}%) grayscale(${grayscale}%)`;
+                ctx.drawImage(originalImage, dx, dy, imgW, imgH);
+
+                // ៧. Update អក្សរបង្ហាញលើ UI
+                contrastVal.textContent = contrast + '%';
+                brightnessVal.textContent = brightness + '%';
+                scaleVal.textContent = scaleSlider.value + '%';
+                pageExpandVal.textContent = pageExpandSlider.value + '%';
+            }
+
+            // ស្តាប់ការផ្លាស់ប្តូរនៅលើ Slider ទាំងអស់
+            contrastSlider.addEventListener('input', applyFiltersAndScale);
+            brightnessSlider.addEventListener('input', applyFiltersAndScale);
+            grayscaleCheck.addEventListener('change', applyFiltersAndScale);
+            scaleSlider.addEventListener('input', applyFiltersAndScale);
+            pageExpandSlider.addEventListener('input', applyFiltersAndScale);
+
+            // មុខងារ Reset
+            resetBtn.addEventListener('click', () => {
+                contrastSlider.value = 100;
+                brightnessSlider.value = 100;
+                grayscaleCheck.checked = false;
+                scaleSlider.value = 100;
+                pageExpandSlider.value = 0;
+                applyFiltersAndScale();
+            });
+
+            // Print Action
+            printBtn.addEventListener('click', () => {
+                if (!originalImage) return;
+                showToast("កំពុងរៀបចំទំព័រ និងបញ្ជូនទិន្នន័យ...");
+                
+                const originalBtnText = printBtn.innerHTML;
+                printBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> កំពុងដំណើរការ...';
+                printBtn.setAttribute('disabled', 'true');
+                
+                setTimeout(() => {
+                    window.print(); 
+                    
+                    printBtn.innerHTML = originalBtnText;
+                    printBtn.removeAttribute('disabled');
+                    showToast("បញ្ជូនទិន្នន័យជោគជ័យ!", true);
+                }, 1000);
+            });
+
+            // Toast Logic
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            function showToast(message, isSuccess = false) {
+                toastMessage.textContent = message;
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                setTimeout(() => {
+                    toast.classList.add('translate-y-20', 'opacity-0');
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>
