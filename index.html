@@ -50,6 +50,8 @@
             gap: 24px;
             padding: 24px;
             width: 100%;
+            /* ប្រើប្រាស់ CSS Hardware Acceleration សម្រាប់ការកែពណ៌លឿន */
+            transition: filter 0.1s ease-out; 
         }
         
         .preview-page {
@@ -59,12 +61,12 @@
             justify-content: center;
             align-items: center;
             transition: all 0.2s ease;
+            overflow: hidden;
         }
         
         .preview-page canvas {
-            max-width: 100%;
-            height: auto;
             display: block;
+            transition: all 0.2s ease;
         }
 
         /* តម្រឹមផ្ទៃខាងក្រោយ Preview */
@@ -92,7 +94,7 @@
                 left: 0;
                 top: 0;
                 width: 100%;
-                display: block !important; /* រៀបជាលក្ខណៈ Block ដើម្បីឱ្យវាចុះបន្ទាត់ទំព័រថ្មី */
+                display: block !important; 
                 padding: 0 !important;
                 gap: 0 !important;
                 background: transparent !important;
@@ -104,14 +106,13 @@
                 display: flex !important;
                 justify-content: center !important;
                 align-items: center !important;
-                page-break-after: always !important; /* កាត់ផ្តាច់ទៅទំព័រថ្មី (Page Break) */
+                page-break-after: always !important; 
                 break-after: page !important;
                 box-shadow: none !important;
                 margin: 0 !important;
                 padding: 0 !important;
             }
 
-            /* កុំឱ្យមានក្រដាសស ទទេរនៅសន្លឹកចុងក្រោយគេ */
             .print-page:last-child {
                 page-break-after: auto !important;
                 break-after: auto !important;
@@ -120,10 +121,11 @@
             .print-page canvas {
                 max-width: 100% !important;
                 max-height: 100% !important;
-                object-fit: contain !important; /* រក្សាសមាមាត្ររូបភាព មិនឱ្យខូចទ្រង់ទ្រាយ */
+                object-fit: contain !important; 
+                width: auto !important;
+                height: auto !important;
             }
             
-            /* លាក់ផ្ទាំងបញ្ជាផ្សេងៗពេលបោះពុម្ព */
             .no-print {
                 display: none !important;
             }
@@ -160,11 +162,11 @@
             
             <div class="p-4 border-b border-gray-200">
                 <h2 class="font-bold text-gray-700 mb-3"><i class="fa-solid fa-file-import mr-2"></i>១. ជ្រើសរើសឯកសារ</h2>
-                <label for="file-upload" class="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-blue-300 rounded-lg cursor-pointer bg-blue-50 hover:bg-blue-100 transition">
+                <label for="file-upload" class="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-blue-300 rounded-lg cursor-pointer bg-blue-50 hover:bg-blue-100 transition relative">
                     <div class="flex flex-col items-center justify-center pt-3 pb-4">
                         <i class="fa-solid fa-cloud-arrow-up text-2xl text-blue-500 mb-1"></i>
-                        <p class="mb-1 text-sm text-gray-600"><span class="font-semibold">ជ្រើសរើសឯកសារ (Multi-page)</span></p>
-                        <p class="text-xs text-gray-500">គាំទ្រ: JPG, PNG, <span class="font-bold text-red-500">PDF គ្រប់ទំព័រ</span></p>
+                        <p class="mb-1 text-sm text-gray-600"><span class="font-semibold">ជ្រើសរើសឯកសារ</span></p>
+                        <p class="text-xs text-gray-500">គាំទ្រ: JPG, PNG, PDF គ្រប់ទំព័រ</p>
                     </div>
                     <input id="file-upload" type="file" accept="image/*, application/pdf" class="hidden" />
                 </label>
@@ -217,7 +219,6 @@
             <div class="p-4 flex-1">
                 <h2 class="font-bold text-gray-700 mb-3"><i class="fa-solid fa-gear mr-2"></i>៤. ការកំណត់ម៉ាស៊ីន</h2>
                 <div class="space-y-3">
-                    <!-- បន្ថែមជម្រើសទំហំក្រដាស -->
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">ទំហំក្រដាស (Paper Size)</label>
                         <select id="paper-size-select" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2">
@@ -267,7 +268,7 @@
             
             <div id="toast" class="absolute bottom-5 right-5 flex items-center w-full max-w-xs p-4 space-x-3 text-gray-500 bg-white rounded-lg shadow-lg transform transition-transform translate-y-20 opacity-0 no-print z-50" role="alert">
                 <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-blue-500 bg-blue-100 rounded-lg">
-                    <i class="fa-solid fa-circle-info"></i>
+                    <i class="fa-solid fa-spinner fa-spin"></i>
                 </div>
                 <div class="ml-3 text-sm font-normal" id="toast-message">កំពុងដំណើរការ...</div>
             </div>
@@ -297,91 +298,134 @@
             const pageExpandVal = document.getElementById('page-expand-val');
             const resetBtn = document.getElementById('reset-filters');
             
-            // អថេរផ្ទុកទិន្នន័យទំព័រទាំងអស់
-            let pagesData = [];
-
-            // ១. ការផ្លាស់ប្តូរទំហំក្រដាស
+            // ការផ្លាស់ប្តូរទំហំក្រដាស
             paperSizeSelect.addEventListener('change', (e) => {
                 const size = e.target.value;
                 if (size === 'auto') {
-                    // លុប Header តែមិនកំណត់ទំហំខ្នាត
                     dynamicPrintStyle.innerHTML = `@page { margin: 0mm; }`;
                 } else {
-                    // កំណត់ទំហំខ្នាត និងលុប Header
                     dynamicPrintStyle.innerHTML = `@page { size: ${size}; margin: 0mm; }`;
                 }
             });
 
-            // ២. ពេលអាប់ឡូតឯកសារ
+            // ពេលអាប់ឡូតឯកសារ
             fileUpload.addEventListener('change', async function(e) {
                 const file = e.target.files[0];
                 if (!file) return;
 
                 // ជម្រះទិន្នន័យចាស់
-                pagesData = [];
                 printContainer.innerHTML = '';
                 printBtn.setAttribute('disabled', 'true');
+                
+                // Reset Sliders
+                contrastSlider.value = 100;
+                brightnessSlider.value = 100;
+                grayscaleCheck.checked = false;
+                scaleSlider.value = 100;
+                pageExpandSlider.value = 0;
+                updateUINumbers();
+                applyCSSFiltersAndScale();
 
                 if (file.type === 'application/pdf') {
-                    showToast("កំពុងអានឯកសារ PDF... សូមរង់ចាំបន្តិច!", false, true);
+                    showToast("កំពុងអានឯកសារ PDF... សូមរង់ចាំ!", false, true, true);
                     
                     try {
                         const fileReader = new FileReader();
                         fileReader.onload = async function() {
                             const typedarray = new Uint8Array(this.result);
                             const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                            const numPages = pdf.numPages;
                             
-                            // Loop គ្រប់ទំព័ររបស់ PDF
-                            for (let i = 1; i <= pdf.numPages; i++) {
-                                document.getElementById('toast-message').textContent = `កំពុងរៀបចំទំព័រទី ${i} នៃ ${pdf.numPages}...`;
-                                
-                                const page = await pdf.getPage(i);
-                                // Scale 2.0 ដើម្បីឱ្យរូបភាពច្បាស់ពេល Print
-                                const viewport = page.getViewport({ scale: 2.0 }); 
-                                
-                                const tempCanvas = document.createElement('canvas');
-                                const tempCtx = tempCanvas.getContext('2d');
-                                tempCanvas.width = viewport.width;
-                                tempCanvas.height = viewport.height;
-                                
-                                await page.render({ canvasContext: tempCtx, viewport: viewport }).promise;
-                                
-                                // បំប្លែង Canvas នីមួយៗទៅជា Image Object
-                                const img = new Image();
-                                await new Promise(resolve => {
-                                    img.onload = resolve;
-                                    img.src = tempCanvas.toDataURL('image/png');
-                                });
-                                
-                                pagesData.push(img);
-                            }
-                            
+                            // *** ការកែប្រែសំខាន់: បន្ថយគុណភាព (Scale) ស្វ័យប្រវត្តិ បើ PDF មានទំព័រច្រើន ***
+                            // ការពារកុំឱ្យពេញ RAM ដែលបណ្តាលឱ្យលោតផ្ទាំង Page Unresponsive
+                            let renderScale = 2.0; 
+                            if (numPages > 200) renderScale = 1.0;
+                            else if (numPages > 50) renderScale = 1.2;
+
                             emptyState.classList.add('hidden');
                             printContainer.classList.remove('hidden');
-                            printBtn.removeAttribute('disabled');
+
+                            for (let i = 1; i <= numPages; i++) {
+                                // Update សារប្រាប់អ្នកប្រើប្រាស់
+                                document.getElementById('toast-message').textContent = `កំពុងរៀបចំទំព័រទី ${i} នៃ ${numPages}...`;
+                                
+                                const page = await pdf.getPage(i);
+                                const viewport = page.getViewport({ scale: renderScale }); 
+                                
+                                const pageWrapper = document.createElement('div');
+                                pageWrapper.className = 'print-page preview-page';
+                                
+                                const canvas = document.createElement('canvas');
+                                const ctx = canvas.getContext('2d');
+                                canvas.width = viewport.width;
+                                canvas.height = viewport.height;
+                                
+                                // Render PDF ដោយផ្ទាល់ទៅ Canvas កុំព្យូទ័រ (មិនបាច់បំប្លែងទៅ Base64 ដែលស៊ី RAM ទេ)
+                                await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+                                
+                                // រក្សាទំហំដើមទុកសម្រាប់គណនាពេលពង្រីក-បង្រួម
+                                canvas.dataset.origW = viewport.width;
+                                canvas.dataset.origH = viewport.height;
+                                
+                                // កំណត់ទំហំ CSS ជាបណ្តោះអាសន្ន
+                                canvas.style.width = viewport.width + 'px';
+                                canvas.style.height = viewport.height + 'px';
+                                pageWrapper.style.width = viewport.width + 'px';
+                                pageWrapper.style.height = viewport.height + 'px';
+
+                                pageWrapper.appendChild(canvas);
+                                printContainer.appendChild(pageWrapper);
+                                
+                                // *** ការកែប្រែសំខាន់: ផ្តល់សិទ្ធិឱ្យ Browser សម្រាក (Yield Thread) ***
+                                // ធ្វើបែបនេះ ទោះ PDF មាន 1000 ទំព័រក៏មិនលោតផ្ទាំងគាំងដែរ
+                                if (i % 3 === 0) {
+                                    await new Promise(resolve => setTimeout(resolve, 5));
+                                }
+                            }
                             
-                            renderAllPages(); // បង្ហាញគ្រប់ទំព័រ
-                            showToast(`បានផ្ទុកជោគជ័យចំនួន ${pdf.numPages} ទំព័រ!`, true);
+                            printBtn.removeAttribute('disabled');
+                            applyCSSFiltersAndScale();
+                            showToast(`បានផ្ទុកជោគជ័យចំនួន ${numPages} ទំព័រ!`, true);
                         };
                         fileReader.readAsArrayBuffer(file);
                         
                     } catch (error) {
                         console.error(error);
-                        showToast("មានបញ្ហាក្នុងការអាន PDF។");
+                        showToast("មានបញ្ហាក្នុងការអាន PDF។", false, false, false);
                     }
                 } 
                 else if (file.type.startsWith('image/')) {
-                    // ប្រសិនបើជាកាតព្វកិច្ចរូបភាពតែ១សន្លឹក
+                    showToast("កំពុងអានរូបភាព...", false, true, true);
                     const reader = new FileReader();
                     reader.onload = function(event) {
                         const img = new Image();
                         img.onload = function() {
-                            pagesData.push(img);
                             emptyState.classList.add('hidden');
                             printContainer.classList.remove('hidden');
-                            printBtn.removeAttribute('disabled');
+
+                            const pageWrapper = document.createElement('div');
+                            pageWrapper.className = 'print-page preview-page';
                             
-                            renderAllPages();
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            ctx.drawImage(img, 0, 0);
+
+                            canvas.dataset.origW = img.width;
+                            canvas.dataset.origH = img.height;
+                            
+                            canvas.style.width = img.width + 'px';
+                            canvas.style.height = img.height + 'px';
+                            pageWrapper.style.width = img.width + 'px';
+                            pageWrapper.style.height = img.height + 'px';
+
+                            pageWrapper.appendChild(canvas);
+                            printContainer.appendChild(pageWrapper);
+
+                            printBtn.removeAttribute('disabled');
+                            applyCSSFiltersAndScale();
+                            showToast("បានផ្ទុករូបភាពជោគជ័យ!", true);
                         }
                         img.src = event.target.result;
                     }
@@ -389,61 +433,57 @@
                 }
             });
 
-            // ៣. មុខងារគូរទំព័រទាំងអស់ឡើងវិញ (Render & Filters)
-            function renderAllPages() {
-                if (pagesData.length === 0) return;
-
-                printContainer.innerHTML = ''; // លុប Canvas ចាស់ៗចោល
-
+            // *** បច្ចេកវិទ្យាថ្មី: ប្រើប្រាស់ CSS Engine ដើម្បីកែពណ៌ និងទំហំ (លឿនខ្លាំង) ***
+            function applyCSSFiltersAndScale() {
                 const scale = scaleSlider.value / 100;
                 const pageExpand = pageExpandSlider.value / 100;
                 const contrast = contrastSlider.value;
                 const brightness = brightnessSlider.value;
                 const grayscale = grayscaleCheck.checked ? 100 : 0;
 
-                // គណនា និងគូរសម្រាប់ទំព័រនីមួយៗ
-                pagesData.forEach((imgObj) => {
-                    // បង្កើត Container សម្រាប់ ១ទំព័រ
-                    const pageWrapper = document.createElement('div');
-                    pageWrapper.className = 'print-page preview-page';
-                    
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                    
-                    const imgW = imgObj.width * scale;
-                    const imgH = imgObj.height * scale;
-                    const extraWidth = imgW * pageExpand;
-                    const extraHeight = imgH * pageExpand;
+                // ១. កែពណ៌ (Color Filters) ប្រើ CSS លើ Container ទាំងមូលតែម្តង 
+                // វានឹងស៊ីសង្វាក់ជាមួយ Browser Engine និងធ្វើការបានលឿនមែនទែន
+                printContainer.style.filter = `contrast(${contrast}%) brightness(${brightness}%) grayscale(${grayscale}%)`;
 
-                    canvas.width = imgW + extraWidth;
-                    canvas.height = imgH + extraHeight;
+                // ២. កែទំហំ និងស៊ុម
+                const pages = printContainer.querySelectorAll('.print-page');
+                pages.forEach(page => {
+                    const canvas = page.querySelector('canvas');
+                    if(canvas && canvas.dataset.origW) {
+                        const origW = parseFloat(canvas.dataset.origW);
+                        const origH = parseFloat(canvas.dataset.origH);
 
-                    const dx = extraWidth / 2;
-                    const dy = extraHeight / 2;
+                        const imgW = origW * scale;
+                        const imgH = origH * scale;
+                        const extraWidth = imgW * pageExpand;
+                        const extraHeight = imgH * pageExpand;
 
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        // ទំហំក្រដាស (ស៊ុមខាងក្រៅ) រីកធំ
+                        page.style.width = `${imgW + extraWidth}px`;
+                        page.style.height = `${imgH + extraHeight}px`;
 
-                    ctx.filter = `contrast(${contrast}%) brightness(${brightness}%) grayscale(${grayscale}%)`;
-                    ctx.drawImage(imgObj, dx, dy, imgW, imgH);
-                    
-                    pageWrapper.appendChild(canvas);
-                    printContainer.appendChild(pageWrapper);
+                        // ទំហំរូបភាពនៅខាងក្នុង
+                        canvas.style.width = `${imgW}px`;
+                        canvas.style.height = `${imgH}px`;
+                    }
                 });
 
-                // Update UI
-                contrastVal.textContent = contrast + '%';
-                brightnessVal.textContent = brightness + '%';
+                updateUINumbers();
+            }
+
+            function updateUINumbers() {
+                contrastVal.textContent = contrastSlider.value + '%';
+                brightnessVal.textContent = brightnessSlider.value + '%';
                 scaleVal.textContent = scaleSlider.value + '%';
                 pageExpandVal.textContent = pageExpandSlider.value + '%';
             }
 
             // ស្តាប់ការផ្លាស់ប្តូរនៅលើ Slider ទាំងអស់
-            contrastSlider.addEventListener('input', renderAllPages);
-            brightnessSlider.addEventListener('input', renderAllPages);
-            grayscaleCheck.addEventListener('change', renderAllPages);
-            scaleSlider.addEventListener('input', renderAllPages);
-            pageExpandSlider.addEventListener('input', renderAllPages);
+            contrastSlider.addEventListener('input', applyCSSFiltersAndScale);
+            brightnessSlider.addEventListener('input', applyCSSFiltersAndScale);
+            grayscaleCheck.addEventListener('change', applyCSSFiltersAndScale);
+            scaleSlider.addEventListener('input', applyCSSFiltersAndScale);
+            pageExpandSlider.addEventListener('input', applyCSSFiltersAndScale);
 
             // មុខងារ Reset
             resetBtn.addEventListener('click', () => {
@@ -452,13 +492,15 @@
                 grayscaleCheck.checked = false;
                 scaleSlider.value = 100;
                 pageExpandSlider.value = 0;
-                renderAllPages();
+                applyCSSFiltersAndScale();
             });
 
             // Print Action
             printBtn.addEventListener('click', () => {
-                if (pagesData.length === 0) return;
-                showToast("កំពុងរៀបចំការបោះពុម្ព...", true);
+                const pages = printContainer.querySelectorAll('.print-page');
+                if (pages.length === 0) return;
+                
+                showToast("កំពុងរៀបចំបញ្ជូនទៅម៉ាស៊ីនបោះពុម្ព...", false, true, true);
                 
                 const originalBtnText = printBtn.innerHTML;
                 printBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> កំពុងដំណើរការ...';
@@ -468,17 +510,24 @@
                     window.print(); 
                     printBtn.innerHTML = originalBtnText;
                     printBtn.removeAttribute('disabled');
+                    showToast("រួចរាល់!", true);
                 }, 1000);
             });
 
             // Toast Logic
             const toast = document.getElementById('toast');
             const toastMessage = document.getElementById('toast-message');
-            function showToast(message, isSuccess = false, keepOpen = false) {
+            function showToast(message, isSuccess = false, keepOpen = false, isSpinner = false) {
                 toastMessage.textContent = message;
                 const iconContainer = toast.querySelector('div:first-child');
+                
                 iconContainer.className = `inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg ${isSuccess ? 'text-green-500 bg-green-100' : 'text-blue-500 bg-blue-100'}`;
-                iconContainer.innerHTML = isSuccess ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-circle-info"></i>';
+                
+                if (isSpinner) {
+                    iconContainer.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                } else {
+                    iconContainer.innerHTML = isSuccess ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-circle-info"></i>';
+                }
 
                 toast.classList.remove('translate-y-20', 'opacity-0');
                 
